@@ -15,7 +15,7 @@ Telegram bot for creating friendship tests to see how well your friends know you
 
 - **Bot Username**: [@friendlyquizbot](https://t.me/friendlyquizbot)
 - **Bot Token**: `8357920603:AAEcRZlAzCebZxQCIRLPQWRASZL-3upZOC8`
-- **Hosted on**: Railway
+- **Hosted on**: Vercel (Serverless)
 - **Database**: Neon PostgreSQL
 
 ## 📥 Quick Start
