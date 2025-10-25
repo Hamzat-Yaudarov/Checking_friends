@@ -560,7 +560,7 @@
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
-              'x-telegram-id': telegramId.toString(),
+              'x-telegram-id': telegramId,
             },
             body: JSON.stringify({
               title,
@@ -573,7 +573,7 @@
             await fetch(`${API_URL}/api/questions/${question.id}`, {
               method: 'DELETE',
               headers: {
-                'x-telegram-id': telegramId.toString(),
+                'x-telegram-id': telegramId,
               },
             });
           }
@@ -586,7 +586,7 @@
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                'x-telegram-id': telegramId.toString(),
+                'x-telegram-id': telegramId,
               },
               body: JSON.stringify({
                 testId,
@@ -604,7 +604,7 @@
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
-                  'x-telegram-id': telegramId.toString(),
+                  'x-telegram-id': telegramId,
                 },
                 body: JSON.stringify({
                   questionId: createdQuestion.id,
@@ -655,14 +655,7 @@
       }
     }
 
-    // Initialize app when DOM is ready
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => {
-        new EditTestPage();
-      });
-    } else {
-      new EditTestPage();
-    }
+    const app = new EditTestPage();
   </script>
 </body>
 </html>

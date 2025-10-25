@@ -434,7 +434,7 @@
       async loadUser() {
         const response = await fetch(`${API_URL}/api/users/me`, {
           headers: {
-            'x-telegram-id': this.telegramId.toString(),
+            'x-telegram-id': this.telegramId,
           },
         });
 
@@ -464,7 +464,7 @@
             <div class="empty-state">
               <div class="empty-icon">📝</div>
               <div class="empty-text">У вас пока нет тестов</div>
-              <button class="create-btn" onclick="window.location.href='/miniapp/create-test?user_id=${this.telegramId}'">
+              <button class="create-btn" onclick="app.createNewTest()">
                 ✨ Создать первый тест
               </button>
             </div>
@@ -558,6 +558,10 @@
         window.location.href = `/miniapp/edit-test?test_id=${testId}&user_id=${this.telegramId}`;
       }
 
+      createNewTest() {
+        window.location.href = `/miniapp/create-test?user_id=${this.telegramId}`;
+      }
+
       async deleteTest(testId) {
         if (!confirm('Вы уверены? Это действие нельзя отменить.')) {
           return;
@@ -567,7 +571,7 @@
           const response = await fetch(`${API_URL}/api/tests/${testId}`, {
             method: 'DELETE',
             headers: {
-              'x-telegram-id': this.telegramId.toString(),
+              'x-telegram-id': this.telegramId,
             },
           });
 
@@ -616,14 +620,7 @@
       }
     }
 
-    // Initialize app when DOM is ready
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => {
-        new MyTestsPage();
-      });
-    } else {
-      new MyTestsPage();
-    }
+    const app = new MyTestsPage();
   </script>
 </body>
 </html>

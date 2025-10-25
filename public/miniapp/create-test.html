@@ -562,7 +562,7 @@
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'x-telegram-id': this.telegramId.toString(),
+              'x-telegram-id': this.telegramId,
             },
             body: JSON.stringify({
               title,
@@ -585,7 +585,7 @@
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                'x-telegram-id': this.telegramId.toString(),
+                'x-telegram-id': this.telegramId,
               },
               body: JSON.stringify({
                 testId: this.testId,
@@ -607,7 +607,7 @@
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
-                  'x-telegram-id': this.telegramId.toString(),
+                  'x-telegram-id': this.telegramId,
                 },
                 body: JSON.stringify({
                   questionId: createdQuestion.id,
@@ -638,14 +638,7 @@
       }
     }
 
-    // Initialize app when DOM is ready
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => {
-        new CreateTestPage();
-      });
-    } else {
-      new CreateTestPage();
-    }
+    const app = new CreateTestPage();
   </script>
 </body>
 </html>
