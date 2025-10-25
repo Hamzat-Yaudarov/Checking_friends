@@ -67,6 +67,32 @@ async function initializeBot() {
   }
 }
 
+function parseBody(req: IncomingMessage & any): Promise<any> {
+  return new Promise((resolve, reject) => {
+    let body = '';
+
+    req.on('data', (chunk: Buffer) => {
+      body += chunk.toString();
+    });
+
+    req.on('end', () => {
+      try {
+        if (body) {
+          resolve(JSON.parse(body));
+        } else {
+          resolve(null);
+        }
+      } catch (error) {
+        reject(error);
+      }
+    });
+
+    req.on('error', (error: Error) => {
+      reject(error);
+    });
+  });
+}
+
 export default async (req: IncomingMessage & any, res: ServerResponse & any) => {
   try {
     // Initialize bot on first request
@@ -74,25 +100,39 @@ export default async (req: IncomingMessage & any, res: ServerResponse & any) => 
 
     // Handle webhook from Telegram
     if (req.method === 'POST') {
-      const update = req.body;
+      console.log('📨 Received POST request');
+      const update = await parseBody(req);
+      console.log('Update received:', update);
 
       if (update && update.update_id && bot) {
+        console.log(`Processing update ${update.update_id}`);
         await bot.handleUpdate(update);
-        return res.status(200).json({ ok: true });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true }));
+        return;
+      } else {
+        console.log('Invalid update structure');
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: false, error: 'Invalid update' }));
+        return;
       }
     }
 
     // Health check endpoint
     if (req.method === 'GET') {
-      return res.status(200).json({ 
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
         status: 'ok',
         message: 'Friendship Check Bot is running'
-      });
+      }));
+      return;
     }
 
-    res.status(405).json({ error: 'Method not allowed' });
+    res.writeHead(405, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Method not allowed' }));
   } catch (error) {
     console.error('Error processing request:', error);
-    res.status(500).json({ ok: false, error: 'Internal server error' });
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: false, error: 'Internal server error' }));
   }
 };
