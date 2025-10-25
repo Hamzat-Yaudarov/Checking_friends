@@ -24,6 +24,28 @@ app.get('/health', (req, res) => {
   res.json({ status: 'healthy' });
 });
 
+app.get('/setup-webhook', async (req, res) => {
+  try {
+    const TOKEN = process.env.TELEGRAM_TOKEN || '8357920603:AAEcRZlAzCebZxQCIRLPQWRASZL-3upZOC8';
+    const VERCEL_URL = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3001';
+    const WEBHOOK_URL = `${VERCEL_URL}/api/webhook`;
+
+    const response = await fetch(`https://api.telegram.org/bot${TOKEN}/setWebhook`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        url: WEBHOOK_URL,
+        allowed_updates: ['message', 'callback_query']
+      })
+    });
+
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 async function startServer() {
   try {
     await initializeDatabase();

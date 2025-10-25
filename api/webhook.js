@@ -216,7 +216,7 @@ bot.start(async (ctx) => {
       `Добро пожаловать в "Проверка дружбы"! 👋\n\n` +
       `Здесь ты сможешь создать свой уникальный тест, чтобы узнать, ` +
       `насколько хорошо твои друзья тебя знают! 🎯\n\n` +
-      `Создавай вопросы, добавляй ответы и получай невероятные ` +
+      `Создавай вопросы, добавляй отве��ы и получай невероятные ` +
       `ДОСТИЖЕНИЯ ДРУЖБЫ! 🏆\n\n` +
       `Начни прямо сейчас! ⤵️`;
     
@@ -254,7 +254,7 @@ bot.action('create_test', async (ctx) => {
         `1️⃣ Введи вопрос\n` +
         `2️⃣ Добавь минимум 2 варианта ответов\n` +
         `3️⃣ Выбери правильный ответ\n` +
-        `4️⃣ Нажми "Следующий вопрос" для добавления нового вопроса\n` +
+        `4️⃣ Нажми "Следующий вопрос" для добавления н��вого вопроса\n` +
         `5️⃣ После 5+ вопросов появится кнопка "Сохранить тест"\n\n` +
         `Приступим! Введи первый вопрос:`,
         { reply_markup: { inline_keyboard: [[{ text: '🛑 Остановить', callback_data: 'stop_creation' }]] } }
@@ -406,7 +406,7 @@ bot.on('text', async (ctx) => {
       keyboard.push([{ text: '🛑 Остановить', callback_data: 'stop_creation' }]);
       
       const messageText = `✅ Вопрос ${session.questions.length} сохранён!\n\n` +
-        `Введи вопрос #${questionNum}:`;
+        `Введи вопро�� #${questionNum}:`;
       
       await updateSessionData(userId, session);
       
@@ -658,7 +658,7 @@ bot.action(/^view_test_(\d+)$/, async (ctx) => {
     }
   } catch (error) {
     console.error('View test error:', error);
-    await ctx.answerCbQuery('Ошибка п��и загрузке теста');
+    await ctx.answerCbQuery('Ошибка при загрузке теста');
   }
 });
 
@@ -699,7 +699,7 @@ bot.action(/^delete_test_(\d+)$/, async (ctx) => {
   try {
     const testId = parseInt(ctx.match[1]);
     
-    const message = `⚠️ Вы уверены? Это д��йствие нельзя отменить.`;
+    const message = `⚠️ Вы уверены? Это действие нельзя отменить.`;
     
     const keyboard = [
       [
@@ -757,8 +757,14 @@ bot.action(/^confirm_delete_(\d+)$/, async (ctx) => {
   }
 });
 
+let dbInitialized = false;
+
 async function initializeDatabase() {
+  if (dbInitialized) return;
+
   try {
+    console.log('🔧 Инициализация БД...');
+
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
         id BIGINT PRIMARY KEY,
@@ -816,22 +822,26 @@ async function initializeDatabase() {
       )
     `);
 
-    console.log('Database initialized');
+    dbInitialized = true;
+    console.log('✅ Database initialized');
   } catch (error) {
-    console.error('Database initialization error:', error);
+    console.error('❌ Database initialization error:', error);
   }
 }
 
 export default async function handler(req, res) {
   try {
+    await initializeDatabase();
+
     if (req.method === 'POST') {
+      console.log('📬 Получен POST запрос');
       await bot.handleUpdate(req.body, res);
     } else if (req.method === 'GET') {
-      await initializeDatabase();
+      console.log('📖 GET запрос к webhook');
       res.json({ status: 'Telegram bot is running', bot: '@friendlyquizbot' });
     }
   } catch (error) {
-    console.error('Webhook handler error:', error);
+    console.error('❌ Webhook handler error:', error);
     res.status(200).json({ ok: true });
   }
 }
