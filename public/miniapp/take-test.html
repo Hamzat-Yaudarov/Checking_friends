@@ -448,7 +448,23 @@
 
         this.test = await response.json();
 
-        // Check authorization - sync current user
+        // Auto-register user if not exists
+        await fetch(`${API_URL}/api/users/sync`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-telegram-id': this.telegramUser.id.toString(),
+          },
+          body: JSON.stringify({
+            telegramId: this.telegramUser.id,
+            telegramUsername: this.telegramUser.username || null,
+            firstName: this.telegramUser.first_name || null,
+            lastName: this.telegramUser.last_name || null,
+            avatarUrl: null,
+          }),
+        });
+
+        // Get current user
         const userResponse = await fetch(`${API_URL}/api/users/me`, {
           headers: {
             'x-telegram-id': this.telegramUser.id.toString(),
@@ -456,7 +472,7 @@
         });
 
         if (!userResponse.ok) {
-          throw new Error('Пользователь не найден');
+          throw new Error('Ошибка загрузки пользователя');
         }
 
         const user = await userResponse.json();
@@ -569,7 +585,15 @@
           const total = attempt.total_questions;
 
           document.getElementById('scoreDisplay').textContent = `${percentage}%`;
-          document.getElementById('scoreDetails').textContent = `Вы ответили правильно на ${score} из ${total} вопросов`;
+          document.getElementById('scoreDetails').textContent = `Вы ��тветили правильно на ${score} из ${total} вопросов`;
+
+          // Pre-fill name field with username or first name
+          const nameInput = document.getElementById('displayName');
+          if (this.telegramUser.username) {
+            nameInput.value = `@${this.telegramUser.username}`;
+          } else if (this.telegramUser.first_name) {
+            nameInput.value = this.telegramUser.first_name;
+          }
 
           this.attempt = attempt;
           this.setupResultsEventListeners();
@@ -608,8 +632,20 @@
             }
           }
 
-          // Update attempt with display name if needed
-          // For now, we just go back since the attempt was already created
+          // Update attempt with display name
+          if (this.attempt && this.attempt.id) {
+            await fetch(`${API_URL}/api/test-attempts/${this.attempt.id}`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-telegram-id': this.telegramUser.id.toString(),
+              },
+              body: JSON.stringify({
+                displayName,
+              }),
+            });
+          }
+
           alert('✅ Спасибо за прохождение теста!');
           // Close the Web App and return to main menu
           if (tg) {
@@ -619,7 +655,7 @@
           }
         } catch (error) {
           console.error('Finish error:', error);
-          alert('Ошибка');
+          alert('Ошибка при сохранении результатов');
         }
       }
 
@@ -643,10 +679,18 @@
         document.getElementById('errorContainer').style.display = 'block';
         document.getElementById('errorText').innerHTML = `
           <div style="font-size: 16px; margin-bottom: 15px;">${message}</div>
-          <button class="btn btn-secondary" style="width: 100%;" onclick="window.history.back()">
+          <button class="btn btn-secondary" style="width: 100%;" onclick="app.goHome()">
             ← Вернуться
           </button>
         `;
+      }
+
+      goHome() {
+        if (tg) {
+          tg.close();
+        } else {
+          window.location.href = '/miniapp';
+        }
       }
 
       escapeHtml(text) {

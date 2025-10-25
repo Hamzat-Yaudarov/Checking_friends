@@ -231,6 +231,17 @@ export const getTestAttemptById = async (attemptId: string): Promise<TestAttempt
   return result.rows[0] || null;
 };
 
+export const updateTestAttemptDisplayName = async (
+  attemptId: string,
+  displayName: string | null
+): Promise<TestAttempt> => {
+  const result = await query(
+    `UPDATE test_attempts SET display_name = $1 WHERE id = $2 RETURNING *`,
+    [displayName, attemptId]
+  );
+  return result.rows[0];
+};
+
 // Test results
 export const createTestResult = async (
   attemptId: string,

@@ -370,6 +370,20 @@ app.get('/api/tests/:testId/attempts', async (req: Request, res: Response) => {
   }
 });
 
+// Update test attempt with display name
+app.patch('/api/test-attempts/:attemptId', validateTelegramId, async (req: Request, res: Response) => {
+  try {
+    const { displayName } = req.body;
+    const { attemptId } = req.params;
+
+    const result = await testService.updateTestAttemptDisplayName(attemptId, displayName);
+    res.json(result);
+  } catch (error) {
+    console.error('Error updating test attempt:', error);
+    res.status(500).json({ error: 'Failed to update test attempt' });
+  }
+});
+
 // Health check
 app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'ok' });
