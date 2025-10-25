@@ -11,17 +11,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
-// Root route handler - serves the appropriate page based on context
+// Root route handler - serves router page that detects Telegram app parameters
 app.get('/', (req: Request, res: Response) => {
-  const startParam = req.query.startapp as string | undefined;
-
-  // If there's a startapp parameter for taking a test, redirect to take-test
-  if (startParam && startParam.startsWith('test_')) {
-    return res.redirect(`/miniapp/take-test?test_id=${startParam.substring(5)}`);
-  }
-
-  // Otherwise, redirect to main miniapp page
-  res.redirect('/miniapp');
+  res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
 // MiniApp routes

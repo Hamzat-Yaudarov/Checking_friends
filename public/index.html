@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Проверка дружбы</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .loader {
+      text-align: center;
+      color: white;
+    }
+
+    .spinner {
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top: 4px solid white;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="loader">
+    <div class="spinner"></div>
+    <p>Загрузка приложения...</p>
+  </div>
+
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script>
+    const tg = window.Telegram?.WebApp;
+
+    if (tg) {
+      tg.ready();
+
+      // Получаем initData и парсим его
+      const initData = tg.initData || '';
+      
+      // Ищем start_param в initData
+      let testId = null;
+      if (initData) {
+        const params = new URLSearchParams(initData);
+        const startParam = params.get('start_param');
+        
+        if (startParam && startParam.startsWith('test_')) {
+          testId = startParam.substring(5);
+        }
+      }
+
+      // Если есть ID теста, открываем страницу теста
+      if (testId) {
+        window.location.href = `/miniapp/take-test?test_id=${encodeURIComponent(testId)}`;
+      } else {
+        // Иначе открываем основное меню
+        window.location.href = '/miniapp';
+      }
+    } else {
+      // Если это не Telegram, просто открываем основное меню
+      window.location.href = '/miniapp';
+    }
+  </script>
+</body>
+</html>
