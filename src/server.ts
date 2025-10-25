@@ -11,6 +11,27 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
+// MiniApp routes
+app.get('/miniapp', (req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, '../public/miniapp/index.html'));
+});
+
+app.get('/miniapp/create-test', (req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, '../public/miniapp/create-test.html'));
+});
+
+app.get('/miniapp/my-tests', (req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, '../public/miniapp/my-tests.html'));
+});
+
+app.get('/miniapp/take-test', (req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, '../public/miniapp/take-test.html'));
+});
+
+app.get('/miniapp/edit-test', (req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, '../public/miniapp/edit-test.html'));
+});
+
 // Middleware to validate telegram_id
 const validateTelegramId = (req: Request, res: Response, next: NextFunction) => {
   const telegramId = req.headers['x-telegram-id'];
