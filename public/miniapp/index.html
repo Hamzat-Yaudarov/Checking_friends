@@ -187,12 +187,26 @@
     </div>
   </div>
 
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script>
     const API_URL = window.location.origin;
 
+    // Initialize Telegram Web App
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.ready();
+    }
+
     class MiniApp {
       constructor() {
+        // Try to get user_id from URL first (for backward compatibility)
         this.telegramId = new URLSearchParams(window.location.search).get('user_id');
+
+        // If not in URL, get from Telegram Web App API
+        if (!this.telegramId && tg?.initDataUnsafe?.user) {
+          this.telegramId = tg.initDataUnsafe.user.id;
+        }
+
         this.user = null;
         this.init();
       }

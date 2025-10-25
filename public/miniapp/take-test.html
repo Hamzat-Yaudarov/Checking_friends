@@ -377,17 +377,39 @@
     </div>
   </div>
 
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script>
     const API_URL = window.location.origin;
+
+    // Initialize Telegram Web App
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.ready();
+    }
+
+    // Parse testId from URL or initData
+    let testId = null;
     const params = new URLSearchParams(window.location.search);
-    const testId = params.get('test_id');
-    const telegramId = params.get('user_id');
+    const initData = tg?.initData || '';
+
+    // Try to get test_id from URL first
+    testId = params.get('test_id');
+
+    // If not in URL, try to get from startapp parameter
+    if (!testId && initData) {
+      const urlParams = new URLSearchParams(initData);
+      const startApp = urlParams.get('start_param');
+      if (startApp && startApp.startsWith('test_')) {
+        testId = startApp.substring(5); // Remove 'test_' prefix
+      }
+    }
 
     class TakeTestPage {
       constructor() {
         this.test = null;
         this.answers = {};
         this.currentNameOption = 'name';
+        this.telegramUser = tg?.initDataUnsafe?.user || null;
         this.init();
       }
 
@@ -406,6 +428,14 @@
       }
 
       async loadTest() {
+        if (!testId) {
+          throw new Error('ID теста не найден');
+        }
+
+        if (!this.telegramUser) {
+          throw new Error('Не удалось получить данные пользователя Telegram');
+        }
+
         const response = await fetch(`${API_URL}/api/tests/${testId}`);
 
         if (!response.ok) {
@@ -418,10 +448,10 @@
 
         this.test = await response.json();
 
-        // Check authorization
+        // Check authorization - sync current user
         const userResponse = await fetch(`${API_URL}/api/users/me`, {
           headers: {
-            'x-telegram-id': telegramId,
+            'x-telegram-id': this.telegramUser.id.toString(),
           },
         });
 
@@ -514,7 +544,7 @@
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'x-telegram-id': telegramId,
+              'x-telegram-id': this.telegramUser.id.toString(),
             },
             body: JSON.stringify({
               testId,
@@ -581,7 +611,12 @@
           // Update attempt with display name if needed
           // For now, we just go back since the attempt was already created
           alert('✅ Спасибо за прохождение теста!');
-          window.location.href = `/miniapp?user_id=${telegramId}`;
+          // Close the Web App and return to main menu
+          if (tg) {
+            tg.close();
+          } else {
+            window.location.href = `/miniapp`;
+          }
         } catch (error) {
           console.error('Finish error:', error);
           alert('Ошибка');

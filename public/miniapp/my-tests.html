@@ -370,7 +370,7 @@
   <div id="resultsModal" class="modal">
     <div class="modal-content">
       <div class="modal-header">
-        <span>���� Результаты теста</span>
+        <span>������ Результаты теста</span>
         <button class="close-btn" onclick="app.closeModal('resultsModal')">✕</button>
       </div>
       <div id="resultsContent" class="results-list"></div>
@@ -391,12 +391,26 @@
     </div>
   </div>
 
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script>
     const API_URL = window.location.origin;
-    const telegramId = new URLSearchParams(window.location.search).get('user_id');
+
+    // Initialize Telegram Web App
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.ready();
+    }
 
     class MyTestsPage {
       constructor() {
+        // Try to get user_id from URL first (for backward compatibility)
+        this.telegramId = new URLSearchParams(window.location.search).get('user_id');
+
+        // If not in URL, get from Telegram Web App API
+        if (!this.telegramId && tg?.initDataUnsafe?.user) {
+          this.telegramId = tg.initDataUnsafe.user.id;
+        }
+
         this.user = null;
         this.tests = [];
         this.currentTestId = null;
@@ -468,7 +482,7 @@
               </div>
               <div class="test-actions">
                 <button class="action-btn btn-results" onclick="app.showResults('${test.id}')">
-                  📊 Результаты
+                  📊 Резу��ьтаты
                 </button>
                 <button class="action-btn btn-share" onclick="app.showShare('${test.id}')">
                   🔗 Поделиться
@@ -498,7 +512,7 @@
 
           const content = document.getElementById('resultsContent');
           if (attempts.length === 0) {
-            content.innerHTML = '<div style="text-align: center; color: #999; padding: 30px 0;">Еще никто не проходил этот тест 😔</div>';
+            content.innerHTML = '<div style="text-align: center; color: #999; padding: 30px 0;">Еще никто ��е проходил этот тест 😔</div>';
           } else {
             content.innerHTML = attempts
               .map((attempt) => `
@@ -524,7 +538,7 @@
 
       async showShare(testId) {
         this.currentTestId = testId;
-        const shareUrl = `${API_URL}/miniapp/take-test?test_id=${testId}&user_id=${telegramId}`;
+        const shareUrl = `https://t.me/friendlyquizbot/friendlyquizbot?startapp=test_${testId}`;
         document.getElementById('shareLink').textContent = shareUrl;
 
         document.getElementById('copyBtn').onclick = () => {
