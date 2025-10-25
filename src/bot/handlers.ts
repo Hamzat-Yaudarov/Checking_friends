@@ -33,7 +33,8 @@ export async function handleStart(ctx: Context) {
     await getOrCreateSession(telegramId);
 
     // Check if there's a test_id in the start parameter
-    const startParam = ctx.startPayload || ctx.match?.[1];
+    const contextAny = ctx as any;
+    const startParam = contextAny.startPayload;
     if (startParam && startParam.startsWith('test_')) {
       const testId = parseInt(startParam.replace('test_', ''));
       if (testId) {
@@ -222,7 +223,7 @@ ${answerDisplay}`;
     }
 
     // Prepare correct answers prompt
-    const correctAnswerMessage = `\n\n🎯 *Отметьте правильные ответы:*`;
+    const correctAnswerMessage = `\n\n🎯 *Отметьт�� правильные ответы:*`;
 
     return ctx.reply(updateMessage + correctAnswerMessage, {
       parse_mode: 'Markdown',
@@ -349,7 +350,7 @@ export async function handleMyTests(ctx: Context) {
     });
   } catch (error) {
     console.error('Error in handleMyTests:', error);
-    return ctx.reply('Произошла ошибка при загрузке тестов.');
+    return ctx.reply('Прои��ошла ошибка при загрузке тестов.');
   }
 }
 
