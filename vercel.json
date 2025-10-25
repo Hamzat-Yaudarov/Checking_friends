@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "envVars": {
+    "TELEGRAM_BOT_TOKEN": "@TELEGRAM_BOT_TOKEN",
+    "TELEGRAM_BOT_USERNAME": "@TELEGRAM_BOT_USERNAME",
+    "DATABASE_URL": "@DATABASE_URL",
+    "WEBHOOK_URL": "@WEBHOOK_URL"
+  },
+  "functions": {
+    "api/**/*.ts": {
+      "memory": 1024,
+      "maxDuration": 30
+    }
+  }
+}
