@@ -90,14 +90,14 @@ export async function handleQuestionInput(ctx: Context) {
     if (!session || session.state !== 'creating_test') return;
 
     const questionText = ctx.message.text;
-    const questionOrder = (session.current_question_count || 0) + 1;
+    // Use current_question_count as the order (0-indexed becomes 1-indexed)
+    const questionOrder = session.current_question_count + 1;
 
     // Add question to database
     const question = await addQuestion(session.current_test_id, questionText, questionOrder);
 
-    // Update session with temp question and increment question count
+    // Update session with temp question (don't increment count yet - that happens on next_question)
     await updateSessionState(telegramId, 'collecting_answers', {
-      questionCount: questionOrder,
       tempQuestion: JSON.stringify({
         id: question.id,
         text: questionText,
@@ -221,15 +221,16 @@ export async function handleNextQuestion(ctx: Context) {
     const session = await getSession(telegramId);
     if (!session) return;
 
-    const currentQuestionNumber = (session.current_question_count || 0) + 1;
+    // Increment the question count for the next question
+    const nextQuestionNumber = (session.current_question_count || 0) + 1;
 
     await updateSessionState(telegramId, 'creating_test', {
-      questionCount: currentQuestionNumber,
+      questionCount: nextQuestionNumber,
       tempQuestion: undefined,
       tempAnswers: undefined,
     });
 
-    const nextQuestionMessage = `📌 Введите вопрос №${currentQuestionNumber + 1}:`;
+    const nextQuestionMessage = `📌 Введите вопрос №${nextQuestionNumber + 1}:`;
 
     return ctx.reply(nextQuestionMessage, {
       ...createTestStartKeyboard,
