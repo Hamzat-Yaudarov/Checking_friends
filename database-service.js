@@ -122,17 +122,18 @@ export async function getUserTests(userId) {
   try {
     const result = await pool.query(
       `SELECT t.id, t.title, t.created_at,
-              COUNT(q.id) as question_count
+              COUNT(q.id)::INTEGER as question_count
        FROM tests t
        LEFT JOIN questions q ON t.id = q.test_id
        WHERE t.user_id = $1
-       GROUP BY t.id
+       GROUP BY t.id, t.title, t.created_at
        ORDER BY t.created_at DESC`,
       [userId]
     );
     return result.rows;
   } catch (error) {
     console.error('Error getting user tests:', error);
+    return [];
   }
 }
 

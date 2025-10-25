@@ -19,7 +19,7 @@ const WELCOME_KEYBOARD = {
   reply_markup: {
     inline_keyboard: [
       [{ text: '✨ Создать тест ✨', callback_data: 'create_test' }],
-      [{ text: '📋 Мои тесты', callback_data: 'my_tests' }]
+      [{ text: '📋 Мои тест��', callback_data: 'my_tests' }]
     ]
   }
 };
@@ -91,7 +91,7 @@ bot.action('create_test', async (ctx) => {
     }
   } catch (error) {
     console.error('Create test error:', error);
-    await ctx.answerCbQuery('Ошибка при создании теста');
+    await ctx.answerCbQuery('Оши��ка при создании теста');
   }
 });
 
@@ -102,8 +102,8 @@ bot.action('my_tests', async (ctx) => {
     
     await ctx.answerCbQuery();
     
-    if (tests.length === 0) {
-      return ctx.reply('У тебя пока нет тест��в. Создай свой первый тест! 🎯');
+    if (!tests || tests.length === 0) {
+      return ctx.reply('👻 У тебя пока нет тестов. Создай свой первый тест! 🎯', WELCOME_KEYBOARD);
     }
     
     let message = '📋 Твои тесты:\n\n';
@@ -111,15 +111,16 @@ bot.action('my_tests', async (ctx) => {
     
     tests.forEach((test, index) => {
       const date = new Date(test.created_at).toLocaleDateString('ru-RU');
-      message += `${index + 1}. "${test.title}"\n   ${test.question_count} вопросов | ${date}\n\n`;
+      const questionCount = test.question_count || 0;
+      message += `${index + 1}. "${test.title}"\n   ${questionCount} вопросов | ${date}\n\n`;
       
       keyboard.push([
-        { text: `Просмотр #${index + 1}`, callback_data: `view_test_${test.id}` },
+        { text: '📖 Просмотр', callback_data: `view_test_${test.id}` },
         { text: '📤 Поделиться', callback_data: `share_test_${test.id}` }
       ]);
     });
     
-    keyboard.push([{ text: '← Назад', callback_data: 'back_to_menu' }]);
+    keyboard.push([{ text: '← Назад в меню', callback_data: 'back_to_menu' }]);
     
     try {
       await ctx.editMessageText(message, {
@@ -335,7 +336,7 @@ bot.action('save_test', async (ctx) => {
     const session = sessionResult.session_data || { state: 'idle' };
     
     if (session.state !== 'creating_test' || !session.questions || session.questions.length < 5) {
-      return ctx.answerCbQuery('Добавь минимум 5 вопросов!');
+      return ctx.answerCbQuery('Добавь минимум 5 вопр��сов!');
     }
     
     if (session.currentQuestion && session.currentAnswers.length >= 2) {
@@ -352,14 +353,28 @@ bot.action('save_test', async (ctx) => {
     
     await updateSessionData(userId, { state: 'idle' });
     
+    const testId = session.testId;
+    const shareLink = `https://t.me/friendlyquizbot?start=test_${testId}`;
+    
     const message = `🎉 Отлично! Тест сохранён!\n\n` +
       `📊 Всего вопросов: ${session.questions.length}\n\n` +
-      `Поделись тестом с друзьями! 👇`;
+      `🔗 Ссылка на тест:\n` +
+      `${shareLink}\n\n` +
+      `Отправь эту ссылку своим друзьям и проверьте, насколько хорошо вы знаете друг друга! 👇`;
+    
+    const keyboard = [
+      [{ text: '📋 Мои тесты', callback_data: 'my_tests' }],
+      [{ text: '✨ Создать ещё один тест', callback_data: 'create_test' }]
+    ];
     
     try {
-      await ctx.editMessageText(message, WELCOME_KEYBOARD);
+      await ctx.editMessageText(message, {
+        reply_markup: { inline_keyboard: keyboard }
+      });
     } catch (err) {
-      await ctx.reply(message, WELCOME_KEYBOARD);
+      await ctx.reply(message, {
+        reply_markup: { inline_keyboard: keyboard }
+      });
     }
     
     await ctx.answerCbQuery('✅ Тест сохранён!');
@@ -391,7 +406,7 @@ bot.action(/^view_test_(\d+)$/, async (ctx) => {
     
     const keyboard = [
       [{ text: '🗑️ Удалить', callback_data: `delete_test_${testId}` }],
-      [{ text: '← Назад', callback_data: 'my_tests' }]
+      [{ text: '← Назад к тестам', callback_data: 'my_tests' }]
     ];
     
     await ctx.answerCbQuery();
@@ -416,14 +431,15 @@ bot.action(/^share_test_(\d+)$/, async (ctx) => {
     const shareLink = `https://t.me/friendlyquizbot?start=test_${testId}`;
     
     const message = `🔗 Ссылка на тест:\n${shareLink}\n\n` +
-      `Отправь эту ссылку своим друзьям! 👇`;
+      `Отправь эту ссылку своим друзьям! 👇\n\n` +
+      `Они смогут пройти твой тест и вы узнаете, насколько хорошо они вас знают! 🎯`;
     
     await ctx.answerCbQuery();
     try {
       await ctx.editMessageText(message, {
         reply_markup: {
           inline_keyboard: [
-            [{ text: '← Назад', callback_data: 'my_tests' }]
+            [{ text: '← Назад к тестам', callback_data: 'my_tests' }]
           ]
         }
       });
@@ -431,7 +447,7 @@ bot.action(/^share_test_(\d+)$/, async (ctx) => {
       await ctx.reply(message, {
         reply_markup: {
           inline_keyboard: [
-            [{ text: '← Назад', callback_data: 'my_tests' }]
+            [{ text: '← Назад к тестам', callback_data: 'my_tests' }]
           ]
         }
       });
