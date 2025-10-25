@@ -22,6 +22,9 @@ export async function query(text: string, params?: any[]) {
 export async function initializeDatabase() {
   const client = await getClient();
   try {
+    // Drop user_sessions table if it exists (to apply schema changes)
+    await client.query('DROP TABLE IF EXISTS user_sessions CASCADE');
+
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -70,7 +73,7 @@ export async function initializeDatabase() {
         current_test_id INTEGER,
         current_question_count INTEGER DEFAULT 0,
         temp_question TEXT,
-        temp_answers TEXT[],
+        temp_answers TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
