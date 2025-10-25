@@ -7,8 +7,6 @@ const port = process.env.PORT || 3001;
 
 app.use(express.json());
 
-let bot_loaded = false;
-
 app.post('/api/webhook', express.json(), (req, res) => {
   try {
     bot.handleUpdate(req.body, res);
@@ -31,23 +29,11 @@ async function startServer() {
     await initializeDatabase();
     console.log('Database initialized');
     
-    await bot.launch({
-      polling: {
-        interval: 300,
-        timeout: 20
-      }
-    });
-    
-    console.log('Bot launched');
-    
     app.listen(port, () => {
       console.log(`Server running on port ${port}`);
       console.log(`Bot: @friendlyquizbot`);
-      bot_loaded = true;
+      console.log(`For local development, remember: Only ONE polling instance at a time!`);
     });
-    
-    process.once('SIGINT', () => bot.stop('SIGINT'));
-    process.once('SIGTERM', () => bot.stop('SIGTERM'));
     
   } catch (error) {
     console.error('Server start error:', error);

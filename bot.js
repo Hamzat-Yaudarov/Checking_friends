@@ -6,6 +6,7 @@ import {
   createTest,
   addQuestion,
   addAnswer,
+  setCorrectAnswer,
   getQuestionById,
   getAnswersByQuestionId,
   getUserTests,
@@ -209,34 +210,74 @@ bot.on('text', async (ctx) => {
       session.lastQuestionMessageId = replyMsg.message_id;
       await updateSessionData(userId, session);
       
-    } else {
-      const answerLines = userMessage.split('\n')
-        .map(line => line.replace(/^Ответ:\s*/i, '').trim())
-        .filter(line => line.length > 0);
-      
-      session.currentAnswers.push(...answerLines);
-      
-      let messageText = `❓ Вопрос ${(session.questions?.length || 0) + 1}: ${session.currentQuestion}\n\n` +
-        `Варианты ответов:\n`;
-      
-      session.currentAnswers.forEach((answer, index) => {
-        messageText += `${index + 1}. ${answer}\n`;
-      });
-      
+    } else if (session.state === 'awaiting_correct_answer') {
+      const answerNum = parseInt(userMessage);
+      if (isNaN(answerNum) || answerNum < 1 || answerNum > session.currentAnswers.length) {
+        return ctx.reply(`❌ Введи номер от 1 до ${session.currentAnswers.length}`);
+      }
+
+      session.correctAnswerIndex = answerNum;
+      session.state = 'creating_test';
+      session.currentQuestion = null;
+      session.currentAnswers = [];
+
+      const questionNum = session.questions.length + 1;
       const keyboard = [];
-      if (session.currentAnswers.length >= 2) {
-        keyboard.push([{ text: '➕ Следующий вопрос', callback_data: 'next_question' }]);
+      if (session.questions.length >= 5) {
+        keyboard.push([{ text: '✅ Сохранить тест', callback_data: 'save_test' }]);
       }
       keyboard.push([{ text: '🛑 Остановить', callback_data: 'stop_creation' }]);
-      
+
+      const messageText = `✅ Вопрос ${session.questions.length} сохранён!\n\n` +
+        `Введи вопрос #${questionNum}:`;
+
       await updateSessionData(userId, session);
-      
+
       try {
         await ctx.deleteMessage();
       } catch (err) {
         console.log('Could not delete message');
       }
-      
+
+      try {
+        await ctx.editMessageText(messageText, {
+          reply_markup: { inline_keyboard: keyboard }
+        });
+      } catch (err) {
+        const msg = await ctx.reply(messageText, {
+          reply_markup: { inline_keyboard: keyboard }
+        });
+        session.lastQuestionMessageId = msg.message_id;
+        await updateSessionData(userId, session);
+      }
+    } else {
+      const answerLines = userMessage.split('\n')
+        .map(line => line.replace(/^Ответ:\s*/i, '').trim())
+        .filter(line => line.length > 0);
+
+      session.currentAnswers.push(...answerLines);
+
+      let messageText = `❓ Вопрос ${(session.questions?.length || 0) + 1}: ${session.currentQuestion}\n\n` +
+        `Варианты ответов:\n`;
+
+      session.currentAnswers.forEach((answer, index) => {
+        messageText += `${index + 1}. ${answer}\n`;
+      });
+
+      const keyboard = [];
+      if (session.currentAnswers.length >= 2) {
+        messageText += `\n❓ Какой вариант правильный? Введи номер:`;
+      }
+      keyboard.push([{ text: '🛑 Остановить', callback_data: 'stop_creation' }]);
+
+      await updateSessionData(userId, session);
+
+      try {
+        await ctx.deleteMessage();
+      } catch (err) {
+        console.log('Could not delete message');
+      }
+
       if (session.lastQuestionMessageId) {
         try {
           await ctx.telegram.editMessageText(
@@ -260,6 +301,11 @@ bot.on('text', async (ctx) => {
         session.lastQuestionMessageId = msg.message_id;
         await updateSessionData(userId, session);
       }
+
+      if (session.currentAnswers.length >= 2) {
+        session.state = 'awaiting_correct_answer';
+        await updateSessionData(userId, session);
+      }
     }
   } catch (error) {
     console.error('Text handler error:', error);
@@ -269,48 +315,58 @@ bot.on('text', async (ctx) => {
 bot.action('next_question', async (ctx) => {
   try {
     const userId = ctx.from.id;
-    
+
     const sessionResult = await getOrCreateSession(userId);
     let session = sessionResult.session_data || { state: 'idle' };
-    
+
     if (session.state !== 'creating_test') return ctx.answerCbQuery();
-    
+
     const questionText = session.currentQuestion;
     const answers = session.currentAnswers || [];
-    
+    const correctIdx = session.correctAnswerIndex;
+
     if (!questionText || answers.length < 2) {
       return ctx.answerCbQuery('Добавь минимум 2 варианта ответов!');
     }
-    
-    const questionId = await addQuestion(session.testId, questionText, (session.questions?.length || 0) + 1);
-    
-    for (let i = 0; i < answers.length; i++) {
-      await addAnswer(questionId, answers[i], i + 1);
+
+    if (!correctIdx) {
+      return ctx.answerCbQuery('Укажи правильный ответ!');
     }
-    
+
+    const questionId = await addQuestion(session.testId, questionText, (session.questions?.length || 0) + 1);
+
+    for (let i = 0; i < answers.length; i++) {
+      const isCorrect = (i + 1) === correctIdx;
+      await addAnswer(questionId, answers[i], i + 1, isCorrect);
+    }
+
+    await setCorrectAnswer(questionId, correctIdx);
+
     if (!session.questions) session.questions = [];
     session.questions.push({
       id: questionId,
       text: questionText,
-      answers: answers
+      answers: answers,
+      correctAnswer: correctIdx
     });
-    
+
     session.currentQuestion = null;
     session.currentAnswers = [];
-    
+    session.correctAnswerIndex = null;
+
     const questionNum = session.questions.length + 1;
-    
+
     const keyboard = [];
     if (session.questions.length >= 5) {
       keyboard.push([{ text: '✅ Сохранить тест', callback_data: 'save_test' }]);
     }
     keyboard.push([{ text: '🛑 Остановить', callback_data: 'stop_creation' }]);
-    
+
     const messageText = `✅ Вопрос ${session.questions.length} сохранён!\n\n` +
       `Введи вопрос #${questionNum}:`;
-    
+
     await updateSessionData(userId, session);
-    
+
     try {
       await ctx.editMessageText(messageText, {
         reply_markup: { inline_keyboard: keyboard }
@@ -320,7 +376,7 @@ bot.action('next_question', async (ctx) => {
         reply_markup: { inline_keyboard: keyboard }
       });
     }
-    
+
     await ctx.answerCbQuery('✅ Вопрос сохранён!');
   } catch (error) {
     console.error('Next question error:', error);

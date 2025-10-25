@@ -43,9 +43,14 @@ export async function initializeDatabase() {
         question_id INT NOT NULL,
         answer_text TEXT NOT NULL,
         answer_order INT NOT NULL,
+        is_correct BOOLEAN DEFAULT false,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
       )
+    `);
+
+    await pool.query(`
+      ALTER TABLE answers ADD COLUMN IF NOT EXISTS is_correct BOOLEAN DEFAULT false
     `);
 
     await pool.query(`

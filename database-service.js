@@ -79,17 +79,37 @@ export async function addQuestion(testId, questionText, questionOrder) {
   }
 }
 
-export async function addAnswer(questionId, answerText, answerOrder) {
+export async function addAnswer(questionId, answerText, answerOrder, isCorrect = false) {
   try {
     const result = await pool.query(
-      `INSERT INTO answers (question_id, answer_text, answer_order) 
-       VALUES ($1, $2, $3) 
+      `INSERT INTO answers (question_id, answer_text, answer_order, is_correct)
+       VALUES ($1, $2, $3, $4)
        RETURNING id`,
-      [questionId, answerText, answerOrder]
+      [questionId, answerText, answerOrder, isCorrect]
     );
     return result.rows[0].id;
   } catch (error) {
     console.error('Error adding answer:', error);
+  }
+}
+
+export async function setCorrectAnswer(questionId, answerOrder) {
+  try {
+    await pool.query(
+      `UPDATE answers
+       SET is_correct = false
+       WHERE question_id = $1`,
+      [questionId]
+    );
+
+    await pool.query(
+      `UPDATE answers
+       SET is_correct = true
+       WHERE question_id = $1 AND answer_order = $2`,
+      [questionId, answerOrder]
+    );
+  } catch (error) {
+    console.error('Error setting correct answer:', error);
   }
 }
 

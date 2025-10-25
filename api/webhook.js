@@ -93,17 +93,37 @@ async function addQuestion(testId, questionText, questionOrder) {
   }
 }
 
-async function addAnswer(questionId, answerText, answerOrder) {
+async function addAnswer(questionId, answerText, answerOrder, isCorrect = false) {
   try {
     const result = await pool.query(
-      `INSERT INTO answers (question_id, answer_text, answer_order) 
-       VALUES ($1, $2, $3) 
+      `INSERT INTO answers (question_id, answer_text, answer_order, is_correct) 
+       VALUES ($1, $2, $3, $4) 
        RETURNING id`,
-      [questionId, answerText, answerOrder]
+      [questionId, answerText, answerOrder, isCorrect]
     );
     return result.rows[0].id;
   } catch (error) {
     console.error('Error adding answer:', error);
+  }
+}
+
+async function setCorrectAnswer(questionId, answerOrder) {
+  try {
+    await pool.query(
+      `UPDATE answers 
+       SET is_correct = false 
+       WHERE question_id = $1`,
+      [questionId]
+    );
+    
+    await pool.query(
+      `UPDATE answers 
+       SET is_correct = true 
+       WHERE question_id = $1 AND answer_order = $2`,
+      [questionId, answerOrder]
+    );
+  } catch (error) {
+    console.error('Error setting correct answer:', error);
   }
 }
 
@@ -117,6 +137,7 @@ async function getAnswersByQuestionId(questionId) {
     return result.rows;
   } catch (error) {
     console.error('Error getting answers:', error);
+    return [];
   }
 }
 
@@ -194,7 +215,7 @@ bot.start(async (ctx) => {
     const message = `✨ Привет, ${user.first_name}! ✨\n\n` +
       `Добро пожаловать в "Проверка дружбы"! 👋\n\n` +
       `Здесь ты сможешь создать свой уникальный тест, чтобы узнать, ` +
-      `насколько хорошо твои друзья тебя знают! 🎯\n\n` +
+      `насколько ��орошо твои друзья тебя знают! 🎯\n\n` +
       `Создавай вопросы, добавляй ответы и получай невероятные ` +
       `ДОСТИЖЕНИЯ ДРУЖБЫ! 🏆\n\n` +
       `Начни прямо сейчас! ⤵️`;
@@ -218,6 +239,7 @@ bot.action('create_test', async (ctx) => {
       currentQuestionIndex: -1,
       currentQuestion: null,
       currentAnswers: [],
+      correctAnswerIndex: null,
       lastMessageId: null,
       lastQuestionMessageId: null
     };
@@ -231,8 +253,9 @@ bot.action('create_test', async (ctx) => {
         `Инструкции:\n` +
         `1️⃣ Введи вопрос\n` +
         `2️⃣ Добавь минимум 2 варианта ответов\n` +
-        `3️⃣ Нажми "Следующий вопрос" для добавления нового вопроса\n` +
-        `4️⃣ После 5+ вопросов появится кнопка "Сохранить тест"\n\n` +
+        `3️⃣ Выбер�� правильный ответ\n` +
+        `4️⃣ Нажми "Следующий вопрос" для добавления нового вопроса\n` +
+        `5️⃣ После 5+ вопросов появится кнопка "Сохранить тест"\n\n` +
         `Приступим! Введи первый вопрос:`,
         { reply_markup: { inline_keyboard: [[{ text: '🛑 Остановить', callback_data: 'stop_creation' }]] } }
       );
@@ -333,7 +356,7 @@ bot.on('text', async (ctx) => {
     const sessionResult = await getOrCreateSession(userId);
     const session = sessionResult.session_data || { state: 'idle' };
     
-    if (session.state !== 'creating_test') {
+    if (session.state !== 'creating_test' && session.state !== 'awaiting_correct_answer') {
       return;
     }
     
@@ -342,6 +365,7 @@ bot.on('text', async (ctx) => {
     if (!session.currentQuestion) {
       session.currentQuestion = userMessage;
       session.currentAnswers = [];
+      session.correctAnswerIndex = null;
       
       await updateSessionData(userId, session);
       
@@ -363,6 +387,46 @@ bot.on('text', async (ctx) => {
       session.lastQuestionMessageId = replyMsg.message_id;
       await updateSessionData(userId, session);
       
+    } else if (session.state === 'awaiting_correct_answer') {
+      const answerNum = parseInt(userMessage);
+      if (isNaN(answerNum) || answerNum < 1 || answerNum > session.currentAnswers.length) {
+        return ctx.reply(`❌ Введи номер от 1 до ${session.currentAnswers.length}`);
+      }
+      
+      session.correctAnswerIndex = answerNum;
+      session.state = 'creating_test';
+      session.currentQuestion = null;
+      session.currentAnswers = [];
+      
+      const questionNum = session.questions.length + 1;
+      const keyboard = [];
+      if (session.questions.length >= 5) {
+        keyboard.push([{ text: '✅ Сохранить тест', callback_data: 'save_test' }]);
+      }
+      keyboard.push([{ text: '🛑 Остановить', callback_data: 'stop_creation' }]);
+      
+      const messageText = `✅ Вопрос ${session.questions.length} сохранён!\n\n` +
+        `Введи вопрос #${questionNum}:`;
+      
+      await updateSessionData(userId, session);
+      
+      try {
+        await ctx.deleteMessage();
+      } catch (err) {
+        console.log('Could not delete message');
+      }
+      
+      try {
+        await ctx.editMessageText(messageText, {
+          reply_markup: { inline_keyboard: keyboard }
+        });
+      } catch (err) {
+        const msg = await ctx.reply(messageText, {
+          reply_markup: { inline_keyboard: keyboard }
+        });
+        session.lastQuestionMessageId = msg.message_id;
+        await updateSessionData(userId, session);
+      }
     } else {
       const answerLines = userMessage.split('\n')
         .map(line => line.replace(/^Ответ:\s*/i, '').trim())
@@ -379,7 +443,7 @@ bot.on('text', async (ctx) => {
       
       const keyboard = [];
       if (session.currentAnswers.length >= 2) {
-        keyboard.push([{ text: '➕ Следующий вопрос', callback_data: 'next_question' }]);
+        messageText += `\n❓ Какой вариант правильный? Введи номер:`;
       }
       keyboard.push([{ text: '🛑 Остановить', callback_data: 'stop_creation' }]);
       
@@ -414,6 +478,11 @@ bot.on('text', async (ctx) => {
         session.lastQuestionMessageId = msg.message_id;
         await updateSessionData(userId, session);
       }
+      
+      if (session.currentAnswers.length >= 2) {
+        session.state = 'awaiting_correct_answer';
+        await updateSessionData(userId, session);
+      }
     }
   } catch (error) {
     console.error('Text handler error:', error);
@@ -431,26 +500,36 @@ bot.action('next_question', async (ctx) => {
     
     const questionText = session.currentQuestion;
     const answers = session.currentAnswers || [];
+    const correctIdx = session.correctAnswerIndex;
     
     if (!questionText || answers.length < 2) {
       return ctx.answerCbQuery('Добавь минимум 2 варианта ответов!');
     }
     
+    if (!correctIdx) {
+      return ctx.answerCbQuery('Укажи правильный ответ!');
+    }
+    
     const questionId = await addQuestion(session.testId, questionText, (session.questions?.length || 0) + 1);
     
     for (let i = 0; i < answers.length; i++) {
-      await addAnswer(questionId, answers[i], i + 1);
+      const isCorrect = (i + 1) === correctIdx;
+      await addAnswer(questionId, answers[i], i + 1, isCorrect);
     }
+    
+    await setCorrectAnswer(questionId, correctIdx);
     
     if (!session.questions) session.questions = [];
     session.questions.push({
       id: questionId,
       text: questionText,
-      answers: answers
+      answers: answers,
+      correctAnswer: correctIdx
     });
     
     session.currentQuestion = null;
     session.currentAnswers = [];
+    session.correctAnswerIndex = null;
     
     const questionNum = session.questions.length + 1;
     
@@ -493,15 +572,18 @@ bot.action('save_test', async (ctx) => {
       return ctx.answerCbQuery('Добавь минимум 5 вопросов!');
     }
     
-    if (session.currentQuestion && session.currentAnswers.length >= 2) {
+    if (session.currentQuestion && session.currentAnswers.length >= 2 && session.correctAnswerIndex) {
       const questionId = await addQuestion(session.testId, session.currentQuestion, session.questions.length + 1);
       for (let i = 0; i < session.currentAnswers.length; i++) {
-        await addAnswer(questionId, session.currentAnswers[i], i + 1);
+        const isCorrect = (i + 1) === session.correctAnswerIndex;
+        await addAnswer(questionId, session.currentAnswers[i], i + 1, isCorrect);
       }
+      await setCorrectAnswer(questionId, session.correctAnswerIndex);
       session.questions.push({
         id: questionId,
         text: session.currentQuestion,
-        answers: session.currentAnswers
+        answers: session.currentAnswers,
+        correctAnswer: session.correctAnswerIndex
       });
     }
     
@@ -553,7 +635,8 @@ bot.action(/^view_test_(\d+)$/, async (ctx) => {
     test.questions.forEach((q, idx) => {
       message += `${idx + 1}. ${q.question_text}\n`;
       q.answers.forEach((a, aidx) => {
-        message += `   ${aidx + 1}) ${a.answer_text}\n`;
+        const mark = a.is_correct ? ' ✅' : '';
+        message += `   ${aidx + 1}) ${a.answer_text}${mark}\n`;
       });
       message += '\n';
     });
@@ -712,9 +795,14 @@ async function initializeDatabase() {
         question_id INT NOT NULL,
         answer_text TEXT NOT NULL,
         answer_order INT NOT NULL,
+        is_correct BOOLEAN DEFAULT false,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
       )
+    `);
+
+    await pool.query(`
+      ALTER TABLE answers ADD COLUMN IF NOT EXISTS is_correct BOOLEAN DEFAULT false
     `);
 
     await pool.query(`
