@@ -13,8 +13,12 @@ import {
   getTestWithQuestions
 } from './database-service.js';
 
-const TOKEN = '8357920603:AAEcRZlAzCebZxQCIRLPQWRASZL-3upZOC8';
+const TOKEN = process.env.TELEGRAM_TOKEN || '8357920603:AAEcRZlAzCebZxQCIRLPQWRASZL-3upZOC8';
 const bot = new Telegraf(TOKEN);
+
+if (!TOKEN) {
+  throw new Error('TELEGRAM_TOKEN is not defined');
+}
 
 const WELCOME_KEYBOARD = {
   reply_markup: {
@@ -41,7 +45,7 @@ bot.start(async (ctx) => {
     const message = `✨ Привет, ${user.first_name}! ✨\n\n` +
       `Добро пожаловать в "Проверка дружбы"! 👋\n\n` +
       `Здесь ты сможешь создать свой уникальный тест, чтобы узнать, ` +
-      `насколько хорошо твои друзья тебя знают! 🎯\n\n` +
+      `насколько х��рошо твои друзья тебя знают! 🎯\n\n` +
       `Создавай вопросы, добавляй ответы и получай невероятные ` +
       `ДОСТИЖЕНИЯ ДРУЖБЫ! 🏆\n\n` +
       `Начни прямо сейчас! ⤵️`;

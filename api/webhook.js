@@ -2,8 +2,8 @@ import { Telegraf } from 'telegraf';
 import pkg from 'pg';
 const { Pool } = pkg;
 
-const TOKEN = '8357920603:AAEcRZlAzCebZxQCIRLPQWRASZL-3upZOC8';
-const NEON_CONNECTION = 'postgresql://neondb_owner:npg_5Q1JLwpTliPo@ep-sweet-firefly-agmtcj1n-pooler.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
+const TOKEN = process.env.TELEGRAM_TOKEN || '8357920603:AAEcRZlAzCebZxQCIRLPQWRASZL-3upZOC8';
+const NEON_CONNECTION = process.env.NEON_CONNECTION || 'postgresql://neondb_owner:npg_5Q1JLwpTliPo@ep-sweet-firefly-agmtcj1n-pooler.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
 
 const pool = new Pool({
   connectionString: NEON_CONNECTION,
@@ -215,7 +215,7 @@ bot.start(async (ctx) => {
     const message = `✨ Привет, ${user.first_name}! ✨\n\n` +
       `Добро пожаловать в "Проверка дружбы"! 👋\n\n` +
       `Здесь ты сможешь создать свой уникальный тест, чтобы узнать, ` +
-      `насколько ��орошо твои друзья тебя знают! 🎯\n\n` +
+      `насколько хорошо твои друзья тебя знают! 🎯\n\n` +
       `Создавай вопросы, добавляй ответы и получай невероятные ` +
       `ДОСТИЖЕНИЯ ДРУЖБЫ! 🏆\n\n` +
       `Начни прямо сейчас! ⤵️`;
@@ -253,7 +253,7 @@ bot.action('create_test', async (ctx) => {
         `Инструкции:\n` +
         `1️⃣ Введи вопрос\n` +
         `2️⃣ Добавь минимум 2 варианта ответов\n` +
-        `3️⃣ Выбер�� правильный ответ\n` +
+        `3️⃣ Выбери правильный ответ\n` +
         `4️⃣ Нажми "Следующий вопрос" для добавления нового вопроса\n` +
         `5️⃣ После 5+ вопросов появится кнопка "Сохранить тест"\n\n` +
         `Приступим! Введи первый вопрос:`,
@@ -658,7 +658,7 @@ bot.action(/^view_test_(\d+)$/, async (ctx) => {
     }
   } catch (error) {
     console.error('View test error:', error);
-    await ctx.answerCbQuery('Ошибка при загрузке теста');
+    await ctx.answerCbQuery('Ошибка п��и загрузке теста');
   }
 });
 
@@ -699,7 +699,7 @@ bot.action(/^delete_test_(\d+)$/, async (ctx) => {
   try {
     const testId = parseInt(ctx.match[1]);
     
-    const message = `⚠️ Вы уверены? Это действие нельзя отменить.`;
+    const message = `⚠️ Вы уверены? Это д��йствие нельзя отменить.`;
     
     const keyboard = [
       [

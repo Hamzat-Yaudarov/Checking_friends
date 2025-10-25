@@ -1,8 +1,14 @@
 import pkg from 'pg';
 const { Pool } = pkg;
 
+const NEON_CONNECTION = process.env.NEON_CONNECTION || 'postgresql://neondb_owner:npg_5Q1JLwpTliPo@ep-sweet-firefly-agmtcj1n-pooler.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
+
+if (!NEON_CONNECTION) {
+  throw new Error('NEON_CONNECTION is not defined');
+}
+
 const pool = new Pool({
-  connectionString: 'postgresql://neondb_owner:npg_5Q1JLwpTliPo@ep-sweet-firefly-agmtcj1n-pooler.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require'
+  connectionString: NEON_CONNECTION
 });
 
 export async function initializeDatabase() {

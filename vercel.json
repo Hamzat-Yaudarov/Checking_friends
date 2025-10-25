@@ -2,18 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/webhook.js",
+      "src": "index.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
-      "src": "/api/webhook",
-      "dest": "api/webhook.js"
+      "src": "/(.*)",
+      "dest": "index.js"
     }
-  ],
-  "env": {
-    "TELEGRAM_TOKEN": "@TELEGRAM_TOKEN",
-    "NEON_CONNECTION_STRING": "@NEON_CONNECTION_STRING"
-  }
+  ]
 }
