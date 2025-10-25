@@ -14,46 +14,47 @@ import {
   backToMenuCallback,
 } from '../src/handlers/test-handlers';
 
-const BOT_TOKEN = process.env.BOT_TOKEN;
-
-if (!BOT_TOKEN) {
-  throw new Error('BOT_TOKEN is not defined in environment variables');
-}
-
-const bot = new Telegraf(BOT_TOKEN);
-
-// Commands
-bot.command('start', startCommand);
-
-// Callback queries
-bot.action('create_test', createTestCallback);
-bot.action('my_tests', myTestsCallback);
-bot.action('my_tests_view', viewMyTestsCallback);
-bot.action('stop_creation', stopCreationCallback);
-bot.action('next_question', nextQuestionCallback);
-bot.action('save_test', saveTestCallback);
-
-// Test viewing callbacks
-bot.action(/^view_test_\d+$/, viewTestCallback);
-bot.action(/^delete_test_\d+$/, deleteTestCallback);
-bot.action(/^share_test_\d+$/, shareTestCallback);
-bot.action('back_to_tests', backToTestsCallback);
-bot.action('back_to_menu', backToMenuCallback);
-
-// Message handler
-bot.on('message', handleMessage);
-
-// Error handler
-bot.catch((err, ctx) => {
-  console.error('Bot error:', err);
-  ctx.reply('❌ Произошла неожиданная ошибка').catch(console.error);
-});
-
+let bot: Telegraf | null = null;
 let isInitialized = false;
 
 async function initializeBot() {
   if (isInitialized) return;
-  
+
+  const BOT_TOKEN = process.env.BOT_TOKEN;
+
+  if (!BOT_TOKEN) {
+    throw new Error('BOT_TOKEN is not defined in environment variables');
+  }
+
+  bot = new Telegraf(BOT_TOKEN);
+
+  // Commands
+  bot.command('start', startCommand);
+
+  // Callback queries
+  bot.action('create_test', createTestCallback);
+  bot.action('my_tests', myTestsCallback);
+  bot.action('my_tests_view', viewMyTestsCallback);
+  bot.action('stop_creation', stopCreationCallback);
+  bot.action('next_question', nextQuestionCallback);
+  bot.action('save_test', saveTestCallback);
+
+  // Test viewing callbacks
+  bot.action(/^view_test_\d+$/, viewTestCallback);
+  bot.action(/^delete_test_\d+$/, deleteTestCallback);
+  bot.action(/^share_test_\d+$/, shareTestCallback);
+  bot.action('back_to_tests', backToTestsCallback);
+  bot.action('back_to_menu', backToMenuCallback);
+
+  // Message handler
+  bot.on('message', handleMessage);
+
+  // Error handler
+  bot.catch((err, ctx) => {
+    console.error('Bot error:', err);
+    ctx.reply('❌ Произошла неожиданная ошибка').catch(console.error);
+  });
+
   try {
     console.log('🚀 Initializing Friendship Check Bot...');
     await initDatabase();
@@ -74,8 +75,8 @@ export default async (req: IncomingMessage & any, res: ServerResponse & any) => 
     // Handle webhook from Telegram
     if (req.method === 'POST') {
       const update = req.body;
-      
-      if (update && update.update_id) {
+
+      if (update && update.update_id && bot) {
         await bot.handleUpdate(update);
         return res.status(200).json({ ok: true });
       }
