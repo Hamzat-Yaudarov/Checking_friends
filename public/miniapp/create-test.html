@@ -562,7 +562,7 @@
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'x-telegram-id': telegramId,
+              'x-telegram-id': this.telegramId.toString(),
             },
             body: JSON.stringify({
               title,
@@ -585,7 +585,7 @@
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                'x-telegram-id': telegramId,
+                'x-telegram-id': this.telegramId.toString(),
               },
               body: JSON.stringify({
                 testId: this.testId,
@@ -607,7 +607,7 @@
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
-                  'x-telegram-id': telegramId,
+                  'x-telegram-id': this.telegramId.toString(),
                 },
                 body: JSON.stringify({
                   questionId: createdQuestion.id,
@@ -621,7 +621,7 @@
 
           this.showMessage('✅ Тест успешно создан!', 'success');
           setTimeout(() => {
-            window.location.href = `/miniapp/my-tests?user_id=${telegramId}`;
+            window.location.href = `/miniapp/my-tests?user_id=${this.telegramId}`;
           }, 1500);
         } catch (error) {
           console.error('Save test error:', error);
@@ -638,7 +638,14 @@
       }
     }
 
-    const app = new CreateTestPage();
+    // Initialize app when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        new CreateTestPage();
+      });
+    } else {
+      new CreateTestPage();
+    }
   </script>
 </body>
 </html>
