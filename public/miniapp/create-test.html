@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Создать тест</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      padding: 25px;
+      animation: slideUp 0.5s ease-out;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 30px;
+      gap: 10px;
+    }
+
+    .back-btn {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 5px;
+    }
+
+    .title {
+      font-size: 24px;
+      font-weight: 600;
+      color: #333;
+      flex: 1;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 8px;
+    }
+
+    input[type="text"],
+    textarea {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: inherit;
+      transition: border-color 0.3s;
+    }
+
+    input[type="text"]:focus,
+    textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #667eea;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .question-card {
+      background: #f9f9f9;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 15px;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .question-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .question-number {
+      font-size: 12px;
+      background: #667eea;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+
+    .delete-btn {
+      background: #ffebee;
+      color: #c33;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.3s;
+    }
+
+    .delete-btn:hover {
+      background: #ffcdd2;
+    }
+
+    .question-text {
+      font-size: 14px;
+      color: #333;
+      margin-bottom: 12px;
+      word-break: break-word;
+    }
+
+    .answer-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .answer-item input[type="radio"] {
+      margin-top: 6px;
+      cursor: pointer;
+    }
+
+    .answer-item input[type="text"] {
+      flex: 1;
+      padding: 8px;
+      font-size: 13px;
+    }
+
+    .answer-delete {
+      background: #ffebee;
+      color: #c33;
+      border: none;
+      padding: 6px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .answer-delete:hover {
+      background: #ffcdd2;
+    }
+
+    .add-answer-btn {
+      background: #e3f2fd;
+      color: #1976d2;
+      border: 1px dashed #1976d2;
+      padding: 10px 15px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      width: 100%;
+      transition: all 0.3s;
+      margin-top: 10px;
+    }
+
+    .add-answer-btn:hover {
+      background: #bbdefb;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 30px;
+    }
+
+    .btn {
+      padding: 14px 20px;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      flex: 1;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      background: #f0f0f0;
+      color: #333;
+    }
+
+    .btn-secondary:hover {
+      background: #e0e0e0;
+    }
+
+    .add-question-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      width: 100%;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: all 0.3s;
+    }
+
+    .add-question-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .empty-state {
+      text-align: center;
+      color: #999;
+      padding: 20px;
+    }
+
+    .error {
+      background: #fee;
+      color: #c33;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    .success {
+      background: #efe;
+      color: #3c3;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <button class="back-btn" id="backBtn">←</button>
+      <div class="title">✨ Создать тест</div>
+    </div>
+
+    <div id="message"></div>
+
+    <form id="testForm">
+      <div class="form-group">
+        <label for="testTitle">Название теста *</label>
+        <input type="text" id="testTitle" placeholder="Введите название..." required>
+      </div>
+
+      <div class="form-group">
+        <label for="testDescription">Описание (опционально)</label>
+        <textarea id="testDescription" placeholder="Добавьте описание теста..."></textarea>
+      </div>
+
+      <div class="section-title">📝 Вопросы</div>
+
+      <div id="questionsContainer">
+        <div class="empty-state">
+          Нажмите кнопку ниже, чтобы добавить вопрос
+        </div>
+      </div>
+
+      <button type="button" class="add-question-btn" id="addQuestionBtn">
+        ➕ Добавить вопрос
+      </button>
+
+      <div class="action-buttons">
+        <button type="submit" class="btn btn-primary" id="submitBtn">
+          ✅ Сохранить тест
+        </button>
+        <button type="button" class="btn btn-secondary" id="cancelBtn">
+          ❌ Отменить
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    const API_URL = window.location.origin;
+    const telegramId = new URLSearchParams(window.location.search).get('user_id');
+
+    class CreateTestPage {
+      constructor() {
+        this.questions = [];
+        this.testId = null;
+        this.init();
+      }
+
+      init() {
+        this.setupEventListeners();
+      }
+
+      setupEventListeners() {
+        document.getElementById('addQuestionBtn').addEventListener('click', (e) => {
+          e.preventDefault();
+          this.addQuestion();
+        });
+
+        document.getElementById('testForm').addEventListener('submit', (e) => {
+          e.preventDefault();
+          this.saveTest();
+        });
+
+        document.getElementById('backBtn').addEventListener('click', () => {
+          window.history.back();
+        });
+
+        document.getElementById('cancelBtn').addEventListener('click', () => {
+          window.history.back();
+        });
+      }
+
+      addQuestion() {
+        const questionIndex = this.questions.length;
+        const questionId = `q-${Date.now()}`;
+
+        this.questions.push({
+          id: questionId,
+          text: '',
+          answers: [
+            { id: `a-${Date.now()}-0`, text: '', isCorrect: true },
+            { id: `a-${Date.now()}-1`, text: '', isCorrect: false },
+          ],
+        });
+
+        this.renderQuestions();
+      }
+
+      deleteQuestion(questionId) {
+        this.questions = this.questions.filter((q) => q.id !== questionId);
+        this.renderQuestions();
+      }
+
+      addAnswer(questionId) {
+        const question = this.questions.find((q) => q.id === questionId);
+        if (question) {
+          question.answers.push({
+            id: `a-${Date.now()}`,
+            text: '',
+            isCorrect: false,
+          });
+          this.renderQuestions();
+        }
+      }
+
+      deleteAnswer(questionId, answerId) {
+        const question = this.questions.find((q) => q.id === questionId);
+        if (question) {
+          question.answers = question.answers.filter((a) => a.id !== answerId);
+          this.renderQuestions();
+        }
+      }
+
+      renderQuestions() {
+        const container = document.getElementById('questionsContainer');
+
+        if (this.questions.length === 0) {
+          container.innerHTML = '<div class="empty-state">Нажмите кнопку ниже, чтобы добавить вопрос</div>';
+          return;
+        }
+
+        container.innerHTML = this.questions
+          .map((question, qIndex) => `
+            <div class="question-card">
+              <div class="question-header">
+                <span class="question-number">Вопрос ${qIndex + 1}</span>
+                <button type="button" class="delete-btn" onclick="app.deleteQuestion('${question.id}')">
+                  🗑️ Удалить
+                </button>
+              </div>
+
+              <div class="form-group">
+                <input
+                  type="text"
+                  placeholder="Введите вопрос..."
+                  value="${question.text}"
+                  onchange="app.updateQuestionText('${question.id}', this.value)"
+                  style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px;"
+                >
+              </div>
+
+              <label style="display: block; margin-bottom: 8px; font-size: 13px; color: #666;">Варианты ответов:</label>
+              ${question.answers
+                .map(
+                  (answer, aIndex) => `
+                <div class="answer-item">
+                  <input
+                    type="radio"
+                    name="correct-${question.id}"
+                    ${answer.isCorrect ? 'checked' : ''}
+                    onchange="app.setCorrectAnswer('${question.id}', '${answer.id}')"
+                  >
+                  <input
+                    type="text"
+                    placeholder="Вариант ответа ${aIndex + 1}"
+                    value="${answer.text}"
+                    onchange="app.updateAnswerText('${question.id}', '${answer.id}', this.value)"
+                  >
+                  <button type="button" class="answer-delete" onclick="app.deleteAnswer('${question.id}', '${answer.id}')">
+                    ✕
+                  </button>
+                </div>
+              `
+                )
+                .join('')}
+
+              <button type="button" class="add-answer-btn" onclick="app.addAnswer('${question.id}')">
+                ➕ Добавить вариант ответа
+              </button>
+            </div>
+          `)
+          .join('');
+      }
+
+      updateQuestionText(questionId, text) {
+        const question = this.questions.find((q) => q.id === questionId);
+        if (question) {
+          question.text = text;
+        }
+      }
+
+      updateAnswerText(questionId, answerId, text) {
+        const question = this.questions.find((q) => q.id === questionId);
+        if (question) {
+          const answer = question.answers.find((a) => a.id === answerId);
+          if (answer) {
+            answer.text = text;
+          }
+        }
+      }
+
+      setCorrectAnswer(questionId, answerId) {
+        const question = this.questions.find((q) => q.id === questionId);
+        if (question) {
+          question.answers.forEach((a) => {
+            a.isCorrect = a.id === answerId;
+          });
+        }
+      }
+
+      async saveTest() {
+        try {
+          const title = document.getElementById('testTitle').value.trim();
+          const description = document.getElementById('testDescription').value.trim();
+
+          if (!title) {
+            this.showMessage('Введите название теста', 'error');
+            return;
+          }
+
+          if (this.questions.length === 0) {
+            this.showMessage('Добавьте хотя бы один вопрос', 'error');
+            return;
+          }
+
+          for (const question of this.questions) {
+            if (!question.text.trim()) {
+              this.showMessage('Заполните текст всех вопросов', 'error');
+              return;
+            }
+
+            if (question.answers.length < 2) {
+              this.showMessage('Каждый вопрос должен иметь минимум 2 варианта ответа', 'error');
+              return;
+            }
+
+            if (!question.answers.some((a) => a.text.trim())) {
+              this.showMessage('Все варианты ответов должны быть заполнены', 'error');
+              return;
+            }
+
+            if (!question.answers.some((a) => a.isCorrect)) {
+              this.showMessage('Выберите правильный ответ для каждого вопроса', 'error');
+              return;
+            }
+          }
+
+          document.getElementById('submitBtn').disabled = true;
+          this.showMessage('Сохранение...', 'loading');
+
+          // Create test
+          const testResponse = await fetch(`${API_URL}/api/tests`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-telegram-id': telegramId,
+            },
+            body: JSON.stringify({
+              title,
+              description: description || null,
+            }),
+          });
+
+          if (!testResponse.ok) {
+            throw new Error('Failed to create test');
+          }
+
+          const test = await testResponse.json();
+          this.testId = test.id;
+
+          // Create questions and answers
+          for (let qIndex = 0; qIndex < this.questions.length; qIndex++) {
+            const question = this.questions[qIndex];
+
+            const questionResponse = await fetch(`${API_URL}/api/questions`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-telegram-id': telegramId,
+              },
+              body: JSON.stringify({
+                testId: this.testId,
+                text: question.text.trim(),
+                orderIndex: qIndex,
+              }),
+            });
+
+            if (!questionResponse.ok) {
+              throw new Error('Failed to create question');
+            }
+
+            const createdQuestion = await questionResponse.json();
+
+            for (let aIndex = 0; aIndex < question.answers.length; aIndex++) {
+              const answer = question.answers[aIndex];
+
+              await fetch(`${API_URL}/api/answers`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'x-telegram-id': telegramId,
+                },
+                body: JSON.stringify({
+                  questionId: createdQuestion.id,
+                  text: answer.text.trim(),
+                  isCorrect: answer.isCorrect,
+                  orderIndex: aIndex,
+                }),
+              });
+            }
+          }
+
+          this.showMessage('✅ Тест успешно создан!', 'success');
+          setTimeout(() => {
+            window.location.href = `/miniapp/my-tests?user_id=${telegramId}`;
+          }, 1500);
+        } catch (error) {
+          console.error('Save test error:', error);
+          this.showMessage('Ошибка при сохранении теста', 'error');
+          document.getElementById('submitBtn').disabled = false;
+        }
+      }
+
+      showMessage(text, type) {
+        const messageEl = document.getElementById('message');
+        messageEl.className = type;
+        messageEl.textContent = text;
+        messageEl.style.display = 'block';
+      }
+    }
+
+    const app = new CreateTestPage();
+  </script>
+</body>
+</html>

@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Пройти тест</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .header {
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .test-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 5px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background: #e0e0e0;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 15px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+      transition: width 0.3s ease;
+    }
+
+    .question-card {
+      background: white;
+      border-radius: 15px;
+      padding: 25px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .question-number {
+      font-size: 12px;
+      color: #667eea;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .question-text {
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    .answers-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .answer-option {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 15px;
+      background: #f9f9f9;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .answer-option:hover {
+      border-color: #667eea;
+      background: #f5f7ff;
+    }
+
+    .answer-option input[type="radio"] {
+      cursor: pointer;
+      margin-top: 3px;
+    }
+
+    .answer-text {
+      flex: 1;
+      font-size: 14px;
+      color: #333;
+      line-height: 1.4;
+    }
+
+    .buttons-container {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: white;
+      color: #667eea;
+      border: 2px solid #667eea;
+    }
+
+    .btn-secondary:hover {
+      background: #f5f7ff;
+      transform: translateY(-2px);
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px 20px;
+      background: white;
+      border-radius: 15px;
+      color: #999;
+    }
+
+    .spinner {
+      border: 4px solid #f0f0f0;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .error {
+      background: white;
+      border-radius: 15px;
+      padding: 40px 20px;
+      text-align: center;
+      color: #c33;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .error-icon {
+      font-size: 48px;
+      margin-bottom: 15px;
+    }
+
+    .results-container {
+      background: white;
+      border-radius: 15px;
+      padding: 30px 20px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      animation: slideIn 0.5s ease-out;
+    }
+
+    .results-icon {
+      font-size: 60px;
+      margin-bottom: 20px;
+    }
+
+    .results-title {
+      font-size: 22px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 15px;
+    }
+
+    .results-score {
+      font-size: 32px;
+      font-weight: 700;
+      color: #667eea;
+      margin-bottom: 10px;
+    }
+
+    .results-details {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 20px;
+    }
+
+    .name-input-section {
+      background: #f9f9f9;
+      padding: 20px;
+      border-radius: 10px;
+      margin: 20px 0;
+      text-align: left;
+    }
+
+    .name-input-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    .name-input-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .name-input-group input {
+      flex: 1;
+      padding: 10px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    .name-options {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .name-option {
+      flex: 1;
+      padding: 10px;
+      border: 2px solid #e0e0e0;
+      background: white;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      color: #667eea;
+      transition: all 0.3s;
+      text-align: center;
+    }
+
+    .name-option:hover {
+      border-color: #667eea;
+      background: #f5f7ff;
+    }
+
+    .name-option.selected {
+      background: #667eea;
+      color: white;
+      border-color: #667eea;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="loadingContainer" class="loading" style="display: none;">
+      <div class="spinner"></div>
+      <p>Загрузка теста...</p>
+    </div>
+
+    <div id="errorContainer" class="error" style="display: none;">
+      <div class="error-icon">❌</div>
+      <div id="errorText"></div>
+    </div>
+
+    <div id="testContainer" style="display: none;">
+      <div class="header">
+        <div class="test-title" id="testTitle"></div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div style="font-size: 12px; color: #999; margin-top: 8px;" id="progressText"></div>
+      </div>
+
+      <form id="testForm">
+        <div id="questionsContainer"></div>
+
+        <div class="buttons-container">
+          <button type="submit" class="btn btn-primary" id="submitBtn">
+            ✅ Завершить тест
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div id="resultsContainer" style="display: none;">
+      <div class="results-container">
+        <div class="results-icon">🎉</div>
+        <div class="results-title">Тест завершен!</div>
+        <div class="results-score" id="scoreDisplay"></div>
+        <div class="results-details" id="scoreDetails"></div>
+
+        <div class="name-input-section">
+          <label class="name-input-label">Как вас представить создателю теста?</label>
+
+          <div class="name-input-group">
+            <input
+              type="text"
+              id="displayName"
+              placeholder="Введите имя или никнейм"
+              maxlength="50"
+            >
+          </div>
+
+          <div class="name-options">
+            <button
+              type="button"
+              class="name-option selected"
+              id="useNameBtn"
+              onclick="app.selectNameOption('name')"
+            >
+              👤 Ввести имя
+            </button>
+            <button
+              type="button"
+              class="name-option"
+              id="useUsernameBtn"
+              onclick="app.selectNameOption('username')"
+            >
+              🔐 Остаться анонимным
+            </button>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" id="finishBtn" style="width: 100%;">
+          ✅ Завершить
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = window.location.origin;
+    const params = new URLSearchParams(window.location.search);
+    const testId = params.get('test_id');
+    const telegramId = params.get('user_id');
+
+    class TakeTestPage {
+      constructor() {
+        this.test = null;
+        this.answers = {};
+        this.currentNameOption = 'name';
+        this.init();
+      }
+
+      async init() {
+        try {
+          document.getElementById('loadingContainer').style.display = 'block';
+          await this.loadTest();
+          document.getElementById('loadingContainer').style.display = 'none';
+          this.renderTest();
+          this.setupEventListeners();
+        } catch (error) {
+          console.error('Init error:', error);
+          document.getElementById('loadingContainer').style.display = 'none';
+          this.showError(error.message);
+        }
+      }
+
+      async loadTest() {
+        const response = await fetch(`${API_URL}/api/tests/${testId}`);
+
+        if (!response.ok) {
+          const data = await response.json();
+          if (response.status === 404) {
+            throw new Error('Тест не найден');
+          }
+          throw new Error('Ошибка загрузки теста');
+        }
+
+        this.test = await response.json();
+
+        // Check authorization
+        const userResponse = await fetch(`${API_URL}/api/users/me`, {
+          headers: {
+            'x-telegram-id': telegramId,
+          },
+        });
+
+        if (!userResponse.ok) {
+          throw new Error('Пользователь не найден');
+        }
+
+        const user = await userResponse.json();
+
+        // Check if user is creator
+        if (this.test.creator_id === user.id) {
+          throw new Error('Вы не можете проходить свой собственный тест');
+        }
+
+        // Check if already attempted
+        const attempts = await fetch(`${API_URL}/api/tests/${testId}/attempts`);
+        const attemptsList = await attempts.json();
+        const userAttempt = attemptsList.find((a) => a.user_id === user.id);
+
+        if (userAttempt) {
+          throw new Error('Вы уже проходили этот тест');
+        }
+      }
+
+      renderTest() {
+        document.getElementById('testTitle').textContent = this.test.title;
+        document.getElementById('testContainer').style.display = 'block';
+
+        const container = document.getElementById('questionsContainer');
+        const totalQuestions = this.test.questions?.length || 0;
+
+        container.innerHTML = (this.test.questions || [])
+          .map((question, qIndex) => `
+            <div class="question-card">
+              <div class="question-number">Вопрос ${qIndex + 1} из ${totalQuestions}</div>
+              <div class="question-text">${this.escapeHtml(question.text)}</div>
+
+              <div class="answers-list">
+                ${(question.answers || [])
+                  .map(
+                    (answer) => `
+                  <label class="answer-option">
+                    <input
+                      type="radio"
+                      name="question-${question.id}"
+                      value="${answer.id}"
+                      onchange="app.selectAnswer('${question.id}', '${answer.id}')"
+                    >
+                    <span class="answer-text">${this.escapeHtml(answer.text)}</span>
+                  </label>
+                `
+                  )
+                  .join('')}
+              </div>
+            </div>
+          `)
+          .join('');
+      }
+
+      selectAnswer(questionId, answerId) {
+        this.answers[questionId] = answerId;
+        this.updateProgress();
+      }
+
+      updateProgress() {
+        const totalQuestions = this.test.questions?.length || 0;
+        const answeredQuestions = Object.keys(this.answers).length;
+        const percentage = Math.round((answeredQuestions / totalQuestions) * 100);
+
+        document.getElementById('progressFill').style.width = `${percentage}%`;
+        document.getElementById('progressText').textContent = `${answeredQuestions} из ${totalQuestions} вопросов`;
+
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = answeredQuestions < totalQuestions;
+      }
+
+      async submitAnswers() {
+        try {
+          const totalQuestions = this.test.questions?.length || 0;
+          const answeredQuestions = Object.keys(this.answers).length;
+
+          if (answeredQuestions < totalQuestions) {
+            alert('Пожалуйста, ответьте на все вопросы');
+            return;
+          }
+
+          document.getElementById('submitBtn').disabled = true;
+
+          const response = await fetch(`${API_URL}/api/test-attempts`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-telegram-id': telegramId,
+            },
+            body: JSON.stringify({
+              testId,
+              answers: this.answers,
+              displayName: null,
+            }),
+          });
+
+          if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.error || 'Ошибка при сохранении ответов');
+          }
+
+          const attempt = await response.json();
+
+          // Show results
+          document.getElementById('testContainer').style.display = 'none';
+          document.getElementById('resultsContainer').style.display = 'block';
+
+          const percentage = attempt.percentage;
+          const score = attempt.score;
+          const total = attempt.total_questions;
+
+          document.getElementById('scoreDisplay').textContent = `${percentage}%`;
+          document.getElementById('scoreDetails').textContent = `Вы ответили правильно на ${score} из ${total} вопросов`;
+
+          this.attempt = attempt;
+          this.setupResultsEventListeners();
+        } catch (error) {
+          console.error('Submit error:', error);
+          alert(error.message);
+          document.getElementById('submitBtn').disabled = false;
+        }
+      }
+
+      selectNameOption(option) {
+        this.currentNameOption = option;
+
+        document.getElementById('useNameBtn').classList.remove('selected');
+        document.getElementById('useUsernameBtn').classList.remove('selected');
+
+        if (option === 'name') {
+          document.getElementById('useNameBtn').classList.add('selected');
+          document.getElementById('displayName').style.display = 'block';
+          document.getElementById('displayName').placeholder = 'Введите имя или никнейм';
+        } else {
+          document.getElementById('useUsernameBtn').classList.add('selected');
+          document.getElementById('displayName').value = '';
+        }
+      }
+
+      async finishTest() {
+        try {
+          let displayName = null;
+
+          if (this.currentNameOption === 'name') {
+            displayName = document.getElementById('displayName').value.trim();
+            if (!displayName) {
+              alert('Пожалуйста, введите имя');
+              return;
+            }
+          }
+
+          // Update attempt with display name if needed
+          // For now, we just go back since the attempt was already created
+          alert('✅ Спасибо за прохождение теста!');
+          window.location.href = `/miniapp?user_id=${telegramId}`;
+        } catch (error) {
+          console.error('Finish error:', error);
+          alert('Ошибка');
+        }
+      }
+
+      setupEventListeners() {
+        document.getElementById('testForm').addEventListener('submit', (e) => {
+          e.preventDefault();
+          this.submitAnswers();
+        });
+      }
+
+      setupResultsEventListeners() {
+        document.getElementById('finishBtn').addEventListener('click', () => {
+          this.finishTest();
+        });
+      }
+
+      showError(message) {
+        document.getElementById('loadingContainer').style.display = 'none';
+        document.getElementById('testContainer').style.display = 'none';
+        document.getElementById('resultsContainer').style.display = 'none';
+        document.getElementById('errorContainer').style.display = 'block';
+        document.getElementById('errorText').innerHTML = `
+          <div style="font-size: 16px; margin-bottom: 15px;">${message}</div>
+          <button class="btn btn-secondary" style="width: 100%;" onclick="window.history.back()">
+            ← Вернуться
+          </button>
+        `;
+      }
+
+      escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+    }
+
+    const app = new TakeTestPage();
+  </script>
+</body>
+</html>

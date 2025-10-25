@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Проверка дружбы</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 500px;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      padding: 30px 20px;
+      animation: slideUp 0.5s ease-out;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .profile-section {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .avatar-wrapper {
+      margin-bottom: 15px;
+    }
+
+    .avatar {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      margin: 0 auto;
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .avatar img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .username {
+      font-size: 24px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    .user-id {
+      font-size: 14px;
+      color: #999;
+      margin-bottom: 20px;
+    }
+
+    .action-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .btn {
+      padding: 16px 20px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      background: white;
+      color: #667eea;
+      border: 2px solid #667eea;
+    }
+
+    .btn-secondary:hover {
+      background: #f8f9ff;
+      transform: translateY(-2px);
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px 20px;
+      color: #999;
+    }
+
+    .spinner {
+      border: 4px solid #f0f0f0;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .error {
+      background: #fee;
+      color: #c33;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="loading" class="loading" style="display: none;">
+      <div class="spinner"></div>
+      <p>Загрузка...</p>
+    </div>
+
+    <div id="content" style="display: none;">
+      <div id="error" class="error" style="display: none;"></div>
+
+      <div class="profile-section">
+        <div class="avatar-wrapper">
+          <div class="avatar" id="avatar">👤</div>
+        </div>
+        <div class="username" id="username">Загрузка...</div>
+        <div class="user-id" id="userId"></div>
+      </div>
+
+      <div class="action-buttons">
+        <button class="btn btn-primary" id="createTestBtn">
+          ✨ Создать тест ✨
+        </button>
+        <button class="btn btn-secondary" id="myTestsBtn">
+          📋 Мои тесты
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = window.location.origin;
+
+    class MiniApp {
+      constructor() {
+        this.telegramId = new URLSearchParams(window.location.search).get('user_id');
+        this.user = null;
+        this.init();
+      }
+
+      async init() {
+        try {
+          await this.loadUser();
+          this.setupEventListeners();
+          document.getElementById('loading').style.display = 'none';
+          document.getElementById('content').style.display = 'block';
+        } catch (error) {
+          console.error('Init error:', error);
+          this.showError('Ошибка загрузки приложения');
+        }
+      }
+
+      async loadUser() {
+        try {
+          const response = await fetch(`${API_URL}/api/users/me`, {
+            headers: {
+              'x-telegram-id': this.telegramId,
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to load user');
+          }
+
+          this.user = await response.json();
+          this.renderProfile();
+        } catch (error) {
+          console.error('Load user error:', error);
+          throw error;
+        }
+      }
+
+      renderProfile() {
+        const avatarEl = document.getElementById('avatar');
+        const usernameEl = document.getElementById('username');
+        const userIdEl = document.getElementById('userId');
+
+        if (this.user.avatar_url) {
+          avatarEl.innerHTML = `<img src="${this.user.avatar_url}" alt="Avatar">`;
+        } else {
+          const firstChar = (this.user.first_name || 'U').charAt(0).toUpperCase();
+          avatarEl.textContent = firstChar;
+        }
+
+        usernameEl.textContent = this.user.telegram_username ? `@${this.user.telegram_username}` : this.user.first_name || 'Пользователь';
+        userIdEl.textContent = `ID: ${this.user.id.substring(0, 8)}...`;
+      }
+
+      setupEventListeners() {
+        document.getElementById('createTestBtn').addEventListener('click', () => {
+          window.location.href = `/miniapp/create-test?user_id=${this.telegramId}`;
+        });
+
+        document.getElementById('myTestsBtn').addEventListener('click', () => {
+          window.location.href = `/miniapp/my-tests?user_id=${this.telegramId}`;
+        });
+      }
+
+      showError(message) {
+        const errorEl = document.getElementById('error');
+        errorEl.textContent = message;
+        errorEl.style.display = 'block';
+      }
+    }
+
+    new MiniApp();
+  </script>
+</body>
+</html>

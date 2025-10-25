@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Мои тесты</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 25px;
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .back-btn {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 5px;
+    }
+
+    .header-title {
+      font-size: 22px;
+      font-weight: 600;
+      color: #333;
+      flex: 1;
+    }
+
+    .tests-list {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .test-card {
+      background: white;
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .test-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 8px;
+    }
+
+    .test-description {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 12px;
+      line-height: 1.4;
+    }
+
+    .test-stats {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+
+    .stat {
+      background: #f5f5f5;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      color: #666;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .test-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .action-btn {
+      flex: 1;
+      min-width: 80px;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .btn-edit {
+      background: #e3f2fd;
+      color: #1976d2;
+    }
+
+    .btn-edit:hover {
+      background: #bbdefb;
+      transform: translateY(-2px);
+    }
+
+    .btn-share {
+      background: #e8f5e9;
+      color: #388e3c;
+    }
+
+    .btn-share:hover {
+      background: #c8e6c9;
+      transform: translateY(-2px);
+    }
+
+    .btn-results {
+      background: #fff3e0;
+      color: #f57c00;
+    }
+
+    .btn-results:hover {
+      background: #ffe0b2;
+      transform: translateY(-2px);
+    }
+
+    .btn-delete {
+      background: #ffebee;
+      color: #c33;
+    }
+
+    .btn-delete:hover {
+      background: #ffcdd2;
+      transform: translateY(-2px);
+    }
+
+    .empty-state {
+      background: white;
+      border-radius: 15px;
+      padding: 40px 20px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: 15px;
+    }
+
+    .empty-text {
+      font-size: 16px;
+      color: #999;
+      margin-bottom: 20px;
+    }
+
+    .create-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .create-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 15px;
+      padding: 25px;
+      max-width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      animation: slideUp 0.3s ease-out;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .modal-header {
+      font-size: 20px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: #999;
+    }
+
+    .results-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .result-item {
+      background: #f9f9f9;
+      padding: 15px;
+      border-radius: 10px;
+      border-left: 4px solid #667eea;
+    }
+
+    .result-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 5px;
+    }
+
+    .result-score {
+      font-size: 13px;
+      color: #666;
+    }
+
+    .percentage {
+      font-weight: 600;
+      color: #667eea;
+    }
+
+    .share-modal-content {
+      text-align: center;
+    }
+
+    .share-link {
+      background: #f5f5f5;
+      padding: 15px;
+      border-radius: 10px;
+      margin: 20px 0;
+      word-break: break-all;
+      font-family: monospace;
+      font-size: 12px;
+    }
+
+    .copy-btn {
+      background: #667eea;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s;
+    }
+
+    .copy-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .copied-message {
+      background: #e8f5e9;
+      color: #388e3c;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 15px;
+      display: none;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px 20px;
+      color: #999;
+    }
+
+    .spinner {
+      border: 4px solid #f0f0f0;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <button class="back-btn" id="backBtn">←</button>
+      <div class="header-title">📋 Мои тесты</div>
+    </div>
+
+    <div id="loadingContainer" class="loading" style="background: white; border-radius: 15px; display: none;">
+      <div class="spinner"></div>
+      <p>Загрузка...</p>
+    </div>
+
+    <div id="testsList" class="tests-list"></div>
+  </div>
+
+  <!-- Results Modal -->
+  <div id="resultsModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span>���� Результаты теста</span>
+        <button class="close-btn" onclick="app.closeModal('resultsModal')">✕</button>
+      </div>
+      <div id="resultsContent" class="results-list"></div>
+    </div>
+  </div>
+
+  <!-- Share Modal -->
+  <div id="shareModal" class="modal">
+    <div class="modal-content share-modal-content">
+      <div class="modal-header">
+        <span>🔗 Поделиться тестом</span>
+        <button class="close-btn" onclick="app.closeModal('shareModal')">✕</button>
+      </div>
+      <p style="color: #666; margin-bottom: 15px;">Отправьте эту ссылку своим друзьям:</p>
+      <div class="share-link" id="shareLink"></div>
+      <button class="copy-btn" id="copyBtn">📋 Скопировать ссылку</button>
+      <div class="copied-message" id="copiedMessage">✅ Ссылка скопирована!</div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = window.location.origin;
+    const telegramId = new URLSearchParams(window.location.search).get('user_id');
+
+    class MyTestsPage {
+      constructor() {
+        this.user = null;
+        this.tests = [];
+        this.currentTestId = null;
+        this.init();
+      }
+
+      async init() {
+        try {
+          document.getElementById('loadingContainer').style.display = 'block';
+          await this.loadUser();
+          await this.loadTests();
+          document.getElementById('loadingContainer').style.display = 'none';
+          this.setupEventListeners();
+        } catch (error) {
+          console.error('Init error:', error);
+          document.getElementById('loadingContainer').innerHTML =
+            '<div style="color: #c33;">Ошибка загрузки. Пожалуйста, обновите страницу.</div>';
+        }
+      }
+
+      async loadUser() {
+        const response = await fetch(`${API_URL}/api/users/me`, {
+          headers: {
+            'x-telegram-id': telegramId,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to load user');
+        }
+
+        this.user = await response.json();
+      }
+
+      async loadTests() {
+        const response = await fetch(`${API_URL}/api/users/${this.user.id}/tests`);
+
+        if (!response.ok) {
+          throw new Error('Failed to load tests');
+        }
+
+        this.tests = await response.json();
+        this.renderTests();
+      }
+
+      renderTests() {
+        const container = document.getElementById('testsList');
+
+        if (this.tests.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon">📝</div>
+              <div class="empty-text">У вас пока нет тестов</div>
+              <button class="create-btn" onclick="window.location.href='/miniapp/create-test?user_id=${telegramId}'">
+                ✨ Создать первый тест
+              </button>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = this.tests
+          .map((test) => `
+            <div class="test-card">
+              <div class="test-title">${this.escapeHtml(test.title)}</div>
+              ${test.description ? `<div class="test-description">${this.escapeHtml(test.description)}</div>` : ''}
+              <div class="test-stats">
+                <div class="stat">📅 ${new Date(test.created_at).toLocaleDateString('ru-RU')}</div>
+              </div>
+              <div class="test-actions">
+                <button class="action-btn btn-results" onclick="app.showResults('${test.id}')">
+                  📊 Результаты
+                </button>
+                <button class="action-btn btn-share" onclick="app.showShare('${test.id}')">
+                  🔗 Поделиться
+                </button>
+                <button class="action-btn btn-edit" onclick="app.editTest('${test.id}')">
+                  ✏️ Редактиро��ать
+                </button>
+                <button class="action-btn btn-delete" onclick="app.deleteTest('${test.id}')">
+                  🗑️ Удалить
+                </button>
+              </div>
+            </div>
+          `)
+          .join('');
+      }
+
+      async showResults(testId) {
+        try {
+          this.currentTestId = testId;
+          const response = await fetch(`${API_URL}/api/tests/${testId}/attempts`);
+
+          if (!response.ok) {
+            throw new Error('Failed to load results');
+          }
+
+          const attempts = await response.json();
+
+          const content = document.getElementById('resultsContent');
+          if (attempts.length === 0) {
+            content.innerHTML = '<div style="text-align: center; color: #999; padding: 30px 0;">Еще никто не проходил этот тест 😔</div>';
+          } else {
+            content.innerHTML = attempts
+              .map((attempt) => `
+                <div class="result-item">
+                  <div class="result-name">👤 ${this.escapeHtml(attempt.display_name || 'Аноним')}</div>
+                  <div class="result-score">
+                    Результат: <span class="percentage">${attempt.percentage}%</span> (${attempt.score}/${attempt.total_questions})
+                  </div>
+                  <div style="font-size: 12px; color: #999; margin-top: 5px;">
+                    ${new Date(attempt.completed_at).toLocaleDateString('ru-RU')}
+                  </div>
+                </div>
+              `)
+              .join('');
+          }
+
+          this.openModal('resultsModal');
+        } catch (error) {
+          console.error('Load results error:', error);
+          alert('Ошибка загрузки результатов');
+        }
+      }
+
+      async showShare(testId) {
+        this.currentTestId = testId;
+        const shareUrl = `${API_URL}/miniapp/take-test?test_id=${testId}&user_id=${telegramId}`;
+        document.getElementById('shareLink').textContent = shareUrl;
+
+        document.getElementById('copyBtn').onclick = () => {
+          navigator.clipboard.writeText(shareUrl).then(() => {
+            const msg = document.getElementById('copiedMessage');
+            msg.style.display = 'block';
+            setTimeout(() => {
+              msg.style.display = 'none';
+            }, 2000);
+          });
+        };
+
+        this.openModal('shareModal');
+      }
+
+      editTest(testId) {
+        window.location.href = `/miniapp/edit-test?test_id=${testId}&user_id=${telegramId}`;
+      }
+
+      async deleteTest(testId) {
+        if (!confirm('Вы уверены? Это действие нельзя отменить.')) {
+          return;
+        }
+
+        try {
+          const response = await fetch(`${API_URL}/api/tests/${testId}`, {
+            method: 'DELETE',
+            headers: {
+              'x-telegram-id': telegramId,
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to delete test');
+          }
+
+          this.tests = this.tests.filter((t) => t.id !== testId);
+          this.renderTests();
+        } catch (error) {
+          console.error('Delete test error:', error);
+          alert('Ошибка при удалении теста');
+        }
+      }
+
+      openModal(modalId) {
+        document.getElementById(modalId).classList.add('active');
+      }
+
+      closeModal(modalId) {
+        document.getElementById(modalId).classList.remove('active');
+      }
+
+      setupEventListeners() {
+        document.getElementById('backBtn').addEventListener('click', () => {
+          window.history.back();
+        });
+
+        document.getElementById('resultsModal').addEventListener('click', (e) => {
+          if (e.target.id === 'resultsModal') {
+            this.closeModal('resultsModal');
+          }
+        });
+
+        document.getElementById('shareModal').addEventListener('click', (e) => {
+          if (e.target.id === 'shareModal') {
+            this.closeModal('shareModal');
+          }
+        });
+      }
+
+      escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+    }
+
+    const app = new MyTestsPage();
+  </script>
+</body>
+</html>
