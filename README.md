@@ -1,256 +1,174 @@
-# 🤝 Friendship Check Bot
+# Friendship Quiz Bot 🎉
 
-Telegram bot for creating friendship tests to see how well your friends know you about your personal information and interests.
+A Telegram bot that lets users create quizzes about themselves and share them with friends to see how well they know each other.
 
-## 🌟 Features
+## Features
 
-- ✨ **Create Custom Tests**: Design tests with multiple questions about yourself
-- 📋 **Manage Tests**: View and organize all your created tests
-- 🎯 **Share Tests**: Send tests to friends via links or directly in Telegram
-- 🏆 **Track Friendships**: See how well your friends know you based on their answers
-- 💾 **Secure Storage**: All data stored in PostgreSQL (Neon)
-- 🔒 **Privacy First**: Only you control who takes your tests
+- ✨ **Create Custom Quizzes**: Users can easily create tests with their own questions and answer options
+- 📚 **Manage Tests**: View all created quizzes in one place
+- 🎯 **Question Builder**: Add questions one by one with multiple answer options
+- 💾 **Save & Share**: Save completed quizzes and share them with friends via unique links
+- 🏆 **Track Friendship**: See how well friends know you based on their quiz results
 
-## 🚀 Bot Information
+## Technology Stack
 
-- **Bot Username**: [@friendlyquizbot](https://t.me/friendlyquizbot)
-- **Bot Token**: `8357920603:AAEcRZlAzCebZxQCIRLPQWRASZL-3upZOC8`
-- **Hosted on**: Vercel (Serverless)
-- **Database**: Neon PostgreSQL
+- **Bot Framework**: Node.js with Telegram Bot API
+- **Language**: TypeScript
+- **Database**: PostgreSQL (Neon)
+- **Hosting**: Vercel (Serverless)
 
-## 📥 Quick Start
+## Local Development
 
-### Using the Bot
+### Prerequisites
 
-1. **Open Telegram**:
-   - Search for `@friendlyquizbot` or [click here](https://t.me/friendlyquizbot)
-
-2. **Create a Test**:
-   - Send `/start` command
-   - Click "✨ Создать тест ✨"
-   - Follow the instructions to add questions and answers
-   - Save your test when done
-
-3. **Share with Friends**:
-   - Click "📋 Мои тесты"
-   - Select a test and click "🔗 Поделиться"
-   - Share the link with friends
-
-4. **View Results**:
-   - See how many questions your friends answered correctly
-   - Get feedback on your test's difficulty
-
-### Local Development
-
-#### Prerequisites
 - Node.js 18+
 - npm or yarn
-- PostgreSQL (for local testing)
+- Neon PostgreSQL account
 
-#### Setup
+### Setup
 
-1. **Clone the repository**:
-   ```bash
-   git clone <your-repo-url>
-   cd friendship-check-bot
-   ```
-
-2. **Install dependencies**:
+1. **Install dependencies:**
    ```bash
    npm install
    ```
 
-3. **Create `.env` file**:
-   ```bash
-   cp .env.example .env
-   ```
+2. **Set environment variables:**
+   The bot uses polling in development mode and automatically uses the provided credentials. Ensure these are set:
+   - `TELEGRAM_BOT_TOKEN`: Your bot token (already configured)
+   - `DATABASE_URL`: Your Neon database URL (already configured)
+   - `TELEGRAM_BOT_USERNAME`: Your bot username (already configured)
 
-4. **Update `.env` with your credentials**:
-   ```env
-   BOT_TOKEN=8357920603:AAEcRZlAzCebZxQCIRLPQWRASZL-3upZOC8
-   DATABASE_URL=your_neon_connection_string
-   NODE_ENV=development
-   PORT=3001
-   ```
-
-5. **Build the project**:
-   ```bash
-   npm run build
-   ```
-
-6. **Start development server**:
+3. **Start development server:**
    ```bash
    npm run dev
    ```
 
-The bot will start in polling mode and listen for updates.
+The bot will:
+- Connect to Telegram using polling (for local testing)
+- Initialize the database automatically
+- Listen for messages from users
 
-## 🛠️ Project Structure
+## Deployment to Vercel
 
-```
-friendship-check-bot/
-├── src/
-│   ├── index.ts                 # Main entry point
-│   ├── server.ts               # HTTP server with webhook support
-│   ├── services/
-│   │   └── db.ts              # Database connection pool
-│   ├── models/
-│   │   ├── User.ts            # User model and operations
-│   │   ├── Test.ts            # Test/Quiz model and operations
-│   │   └── Session.ts         # Session state management
-│   ├── handlers/
-│   │   ├── commands.ts        # Telegram command handlers
-│   │   └── messages.ts        # Message and callback handlers
-│   ├── utils/
-│   │   ├── keyboards.ts       # Inline keyboard builders
-│   │   ├── messages.ts        # Message formatting utilities
-│   │   └── test-utilities.ts  # Test display utilities
-│   └── database/
-│       ├── schema.sql         # PostgreSQL schema
-│       └── init.ts            # Schema initialization
-├── dist/                        # Compiled JavaScript
-├── package.json
-├── tsconfig.json
-├── railway.json                 # Railway deployment config
-├── Procfile                     # Process file for Railway
-├── .env                         # Environment variables (git-ignored)
-├── .env.example                 # Example env file
-└── README.md
-```
+### Setup
 
-## 📱 Bot Commands
+1. **Build the project:**
+   ```bash
+   npm run build
+   ```
 
-- `/start` - Start the bot and see the main menu
+2. **Deploy to Vercel:**
+   - Connect your GitHub repository to Vercel
+   - Add environment variables in Vercel project settings:
+     - `TELEGRAM_BOT_TOKEN`
+     - `TELEGRAM_BOT_USERNAME`
+     - `DATABASE_URL`
+     - `WEBHOOK_URL`: Your Vercel deployment URL (e.g., `https://your-project.vercel.app`)
+     - `NODE_ENV`: Set to `production`
 
-## 🎯 Main Menu Buttons
+3. **Configure Telegram Webhook:**
+   After deploying, the bot will automatically set its webhook to receive updates from Telegram
 
-- **✨ Создать тест ✨** - Create a new friendship test
-- **📋 Мои тесты** - View all your created tests
+## API Routes
 
-## 📝 Test Creation Flow
+- `POST /webhook` - Receives updates from Telegram (production only)
+- `GET /health` - Health check endpoint
 
-### Step 1: Create Test
-- Click "✨ Создать тест ✨"
-- Bot shows instructions
-
-### Step 2: Add Questions
-- Enter your first question (e.g., "What's my favorite food?")
-- Bot asks for answer options (minimum 2)
-
-### Step 3: Add Answer Options
-- Type answers in format:
-  ```
-  Ответ: Option 1
-  Ответ: Option 2
-  Ответ: Option 3
-  ```
-
-### Step 4: Multiple Questions
-- After adding 2+ answers to a question, click "➕ Следующий вопрос"
-- Repeat steps 2-3 for additional questions (up to 5)
-
-### Step 5: Save Test
-- After 5 questions are added, click "💾 Сохранить тест"
-- Test is saved to your list
-
-### Step 6: Share
-- View your test in "📋 Мои тесты"
-- Click "🔗 Поделиться" to get a share link
-- Send to friends!
-
-## 🗄️ Database Schema
+## Database Schema
 
 ### Tables
 
-- **users**: Telegram user information
-- **tests**: Quiz tests created by users
-- **questions**: Questions within tests
-- **answers**: Answer options for questions
-- **quiz_attempts**: Friend attempts at taking tests
-- **quiz_responses**: Individual responses to questions
-- **user_sessions**: Conversation state tracking
+- **users** - Stores user information
+- **quizzes** - Stores quiz metadata
+- **questions** - Stores individual questions
+- **options** - Stores answer options for each question
+- **quiz_responses** - Stores responses when friends take quizzes
 
-See `src/database/schema.sql` for complete schema.
+## Bot Commands & Usage
 
-## 🌐 Deployment
+### /start
+Displays welcome message with options to create a new quiz or view existing ones
 
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions to Railway.
+### Create Test Flow
+1. User clicks "✨ Создать тест ✨"
+2. Enter questions one by one
+3. Add answer options (minimum 2 required)
+4. Can add up to 5+ questions
+5. Save quiz when ready (5+ questions required)
+6. Get shareable link for friends
 
-### Quick Deploy
-1. Connect GitHub repository to Railway
-2. Set environment variables in Railway dashboard
-3. Railway automatically builds and deploys
+### View Tests
+Click "📚 Мои тесты" to see all created quizzes with share links
 
-## 📊 Technology Stack
+## Development Notes
 
-- **Runtime**: Node.js
-- **Language**: TypeScript
-- **Bot Framework**: Telegraf
-- **Database**: PostgreSQL (Neon)
-- **Hosting**: Railway
-- **Package Manager**: npm
+- **Polling Mode**: Used in development for easier local testing
+- **Webhook Mode**: Used in production on Vercel for real-time updates
+- **Database**: Lazy initialization to prevent blocking startup
+- **Error Handling**: Graceful error handling with timeouts to prevent hanging
 
-## 🔐 Security
+## Project Structure
 
-- All data encrypted in transit (HTTPS/TLS)
-- Database connections use SSL
-- Credentials stored in environment variables
-- No sensitive data logged
-- Regular security updates
+```
+src/
+├── bot/
+│   ├── handlers.ts      # Command and message handlers
+│   └── factory.ts       # Bot initialization and handler setup
+├── database/
+│   ├── connection.ts    # Database connection pool
+│   ├── migrations.ts    # Database schema initialization
+│   └── quizService.ts   # Database operations
+├── types/
+│   ├── index.ts         # TypeScript type definitions
+│   └── pg.d.ts          # PostgreSQL types
+├── utils/
+│   ├── sessionManager.ts # User session management
+│   └── formatters.ts    # Message formatting
+└── index.ts             # Main application entry point
 
-## 📈 Performance
+api/
+├── webhook.ts           # Vercel webhook handler
+└── health.ts            # Health check handler
+```
 
-- Webhook-based message handling (not polling in production)
-- Connection pooling for database efficiency
-- Optimized queries with proper indexing
-- Horizontal scalability on Railway
+## Configuration
 
-## 🐛 Troubleshooting
+### Environment Variables
 
-### Bot doesn't respond
-- Ensure `/start` command works
-- Check Railway logs for errors
+| Variable | Description | Required |
+|----------|-------------|----------|
+| TELEGRAM_BOT_TOKEN | Bot token from BotFather | ✓ |
+| TELEGRAM_BOT_USERNAME | Bot username (without @) | ✓ |
+| DATABASE_URL | Neon PostgreSQL connection string | ✓ |
+| WEBHOOK_URL | Production webhook URL (Vercel) | ✓ (prod only) |
+| NODE_ENV | Environment (development/production) | ✗ |
+| PORT | Server port (default: 3000) | ✗ |
+
+## Troubleshooting
+
+### Bot not responding
+- Check if polling is working in development mode
 - Verify bot token is correct
+- Check database connection
 
-### Database errors
-- Verify Neon connection string
-- Check network connectivity
-- Ensure database is not at capacity
+### Database connection timeout
+- Verify DATABASE_URL is correct
+- Check network connectivity to Neon
+- Ensure database tables exist
 
-### Test creation issues
-- Minimum 2 answer options required
-- Maximum 5 questions per test
-- Check that all fields are filled
+### Message not being deleted
+- This is normal in some Telegram clients
+- The bot will still function correctly
 
-## 🤝 Contributing
+## Future Enhancements
 
-To add features or fix bugs:
+- Friend quiz tracking and scoring
+- Achievement system for high scores
+- Quiz statistics and analytics
+- Friend comparison features
+- Public quiz gallery
+- User profiles with quiz history
 
-1. Create a feature branch
-2. Make your changes
-3. Test locally with `npm run dev`
-4. Push to GitHub
-5. Create a pull request
+## License
 
-## 📝 License
-
-MIT
-
-## 📞 Support
-
-For issues or questions:
-- Check logs: `railway logs --follow`
-- Review error messages in Telegram
-- Check database connectivity
-
-## 🎉 Features in Development
-
-- 🏆 Achievement system for friendship scores
-- 📊 Statistics dashboard
-- 🎨 Custom themes for tests
-- 👥 Group testing mode
-- 🔔 Notifications for test responses
-
----
-
-**Made with ❤️ for friendship**
+ISC
