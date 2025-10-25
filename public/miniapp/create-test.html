@@ -254,20 +254,33 @@
     .add-question-btn {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
-      padding: 12px;
+      padding: 14px;
       border: none;
       border-radius: 10px;
       width: 100%;
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 600;
       cursor: pointer;
       margin-top: 20px;
       transition: all 0.3s;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
     }
 
     .add-question-btn:hover {
       transform: translateY(-2px);
       box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .add-question-btn:active {
+      transform: translateY(0);
+    }
+
+    .question-counter {
+      text-align: center;
+      color: #999;
+      font-size: 12px;
+      margin-top: 15px;
+      padding: 10px 0;
     }
 
     .empty-state {
@@ -321,9 +334,11 @@
 
       <div id="questionsContainer">
         <div class="empty-state">
-          Нажмите кнопку ниже, чтобы добавить вопрос
+          Нажмите кнопку ниже, чтобы добавить первый вопрос
         </div>
       </div>
+
+      <div class="question-counter" id="questionCounter"></div>
 
       <button type="button" class="add-question-btn" id="addQuestionBtn">
         ➕ Добавить вопрос
@@ -399,10 +414,20 @@
           answers: [
             { id: `a-${Date.now()}-0`, text: '', isCorrect: true },
             { id: `a-${Date.now()}-1`, text: '', isCorrect: false },
+            { id: `a-${Date.now()}-2`, text: '', isCorrect: false },
+            { id: `a-${Date.now()}-3`, text: '', isCorrect: false },
           ],
         });
 
         this.renderQuestions();
+
+        // Автофокус на текст вопроса
+        setTimeout(() => {
+          const inputs = document.querySelectorAll('input[placeholder="Введите вопрос..."]');
+          if (inputs.length > 0) {
+            inputs[inputs.length - 1].focus();
+          }
+        }, 100);
       }
 
       deleteQuestion(questionId) {
@@ -432,11 +457,16 @@
 
       renderQuestions() {
         const container = document.getElementById('questionsContainer');
+        const counter = document.getElementById('questionCounter');
 
+        // Обновляем счётчик
         if (this.questions.length === 0) {
-          container.innerHTML = '<div class="empty-state">Нажмите кнопку ниже, чтобы добавить вопрос</div>';
+          counter.textContent = '';
+          container.innerHTML = '<div class="empty-state">Нажмите кнопку ниже, чтобы добавить первый вопрос</div>';
           return;
         }
+
+        counter.textContent = `Всего вопросов: ${this.questions.length}`;
 
         container.innerHTML = this.questions
           .map((question, qIndex) => `
@@ -532,32 +562,29 @@
             return;
           }
 
+          // Валидация
           for (const question of this.questions) {
             if (!question.text.trim()) {
               this.showMessage('Заполните текст всех вопросов', 'error');
               return;
             }
 
-            if (question.answers.length < 2) {
-              this.showMessage('Каждый вопрос должен иметь минимум 2 варианта ответа', 'error');
+            const filledAnswers = question.answers.filter((a) => a.text.trim());
+            if (filledAnswers.length < 2) {
+              this.showMessage('Каждый вопрос должен иметь минимум 2 заполненных варианта ответа', 'error');
               return;
             }
 
-            if (!question.answers.some((a) => a.text.trim())) {
-              this.showMessage('Все варианты ответов должны быть заполнены', 'error');
-              return;
-            }
-
-            if (!question.answers.some((a) => a.isCorrect)) {
+            if (!filledAnswers.some((a) => a.isCorrect)) {
               this.showMessage('Выберите правильный ответ для каждого вопроса', 'error');
               return;
             }
           }
 
           document.getElementById('submitBtn').disabled = true;
-          this.showMessage('Сохранение...', 'loading');
+          this.showMessage('📤 Сохранение теста...', 'loading');
 
-          // Create test
+          // 1. Создаём тест
           const testResponse = await fetch(`${API_URL}/api/tests`, {
             method: 'POST',
             headers: {
@@ -571,16 +598,15 @@
           });
 
           if (!testResponse.ok) {
-            throw new Error('Failed to create test');
+            throw new Error('Не удалось создать тест');
           }
 
           const test = await testResponse.json();
           this.testId = test.id;
+          this.showMessage('📝 Сохранение вопросов...', 'loading');
 
-          // Create questions and answers
-          for (let qIndex = 0; qIndex < this.questions.length; qIndex++) {
-            const question = this.questions[qIndex];
-
+          // 2. Создаём вопросы параллельно
+          const questionCreationPromises = this.questions.map(async (question, qIndex) => {
             const questionResponse = await fetch(`${API_URL}/api/questions`, {
               method: 'POST',
               headers: {
@@ -595,15 +621,28 @@
             });
 
             if (!questionResponse.ok) {
-              throw new Error('Failed to create question');
+              throw new Error('Не удалось создать вопрос');
             }
 
             const createdQuestion = await questionResponse.json();
+            return { originalQuestion: question, createdQuestion };
+          });
 
-            for (let aIndex = 0; aIndex < question.answers.length; aIndex++) {
-              const answer = question.answers[aIndex];
+          const createdQuestions = await Promise.all(questionCreationPromises);
+          this.showMessage('💾 Сохранение ответов...', 'loading');
 
-              await fetch(`${API_URL}/api/answers`, {
+          // 3. Создаём ответы параллельно для каждого вопроса
+          const answerCreationPromises = [];
+          for (const { originalQuestion, createdQuestion } of createdQuestions) {
+            for (let aIndex = 0; aIndex < originalQuestion.answers.length; aIndex++) {
+              const answer = originalQuestion.answers[aIndex];
+
+              // Пропускаем пустые ответы
+              if (!answer.text.trim()) {
+                continue;
+              }
+
+              const promise = fetch(`${API_URL}/api/answers`, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
@@ -615,17 +654,26 @@
                   isCorrect: answer.isCorrect,
                   orderIndex: aIndex,
                 }),
+              }).then((res) => {
+                if (!res.ok) {
+                  throw new Error('Не удалось создать ответ');
+                }
+                return res.json();
               });
+
+              answerCreationPromises.push(promise);
             }
           }
+
+          await Promise.all(answerCreationPromises);
 
           this.showMessage('✅ Тест успешно создан!', 'success');
           setTimeout(() => {
             window.location.href = `/miniapp/my-tests?user_id=${this.telegramId}`;
           }, 1500);
         } catch (error) {
-          console.error('Save test error:', error);
-          this.showMessage('Ошибка при сохранении теста', 'error');
+          console.error('Ошибка сохранения теста:', error);
+          this.showMessage('❌ Ошибка при сохранении теста: ' + error.message, 'error');
           document.getElementById('submitBtn').disabled = false;
         }
       }
