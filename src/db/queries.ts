@@ -128,3 +128,13 @@ export async function getUserByTelegramId(telegramId: number) {
   const result = await query('SELECT * FROM users WHERE telegram_id = $1', [telegramId]);
   return result.rows[0];
 }
+
+export async function markAnswerAsCorrect(answerId: number) {
+  const result = await query('UPDATE answers SET is_correct = TRUE WHERE id = $1 RETURNING *', [answerId]);
+  return result.rows[0];
+}
+
+export async function deleteTest(testId: number) {
+  const result = await query('DELETE FROM tests WHERE id = $1 RETURNING *', [testId]);
+  return result.rows[0];
+}

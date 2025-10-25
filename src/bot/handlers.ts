@@ -9,6 +9,10 @@ import {
   addAnswer,
   getUserByTelegramId,
   getTestsByUser,
+  getTestWithQuestions,
+  getQuestionWithAnswers,
+  markAnswerAsCorrect,
+  deleteTest,
 } from '../db/queries.js';
 import {
   mainMenuKeyboard,
@@ -16,6 +20,8 @@ import {
   nextQuestionKeyboard,
   saveTestKeyboard,
   cancelKeyboard,
+  testActionKeyboard,
+  correctAnswersKeyboard,
 } from './keyboards.js';
 
 export async function handleStart(ctx: Context) {
@@ -26,9 +32,20 @@ export async function handleStart(ctx: Context) {
     await getOrCreateUser(telegramId, ctx.from?.username);
     await getOrCreateSession(telegramId);
 
+    // Check if there's a test_id in the start parameter
+    const startParam = ctx.startPayload || ctx.match?.[1];
+    if (startParam && startParam.startsWith('test_')) {
+      const testId = parseInt(startParam.replace('test_', ''));
+      if (testId) {
+        return ctx.reply(`🎯 Тест загружен! Скоро будет возможность проходить тесты. Пока вы можете создавать свои тесты.`, {
+          ...mainMenuKeyboard,
+        });
+      }
+    }
+
     const welcomeMessage = `🎉 *Добро пожаловать в Проверку Дружбы!* 🎉
 
-Здесь ты сможешь создать увлекательный тест, чтобы узнать, насколько хорошо твои друзья тебя знают! 
+Здесь ты сможешь создать увлекательный тест, чтобы узнать, насколько хорошо твои друзья тебя знают!
 
 Развлекайся, создавай интересные вопросы и получай уникальные *ДОСТИЖЕНИЯ ДРУЖБЫ!*
 
@@ -204,9 +221,17 @@ ${answerDisplay}`;
       }
     }
 
-    return ctx.reply(updateMessage, {
+    // Prepare correct answers prompt
+    const correctAnswerMessage = `\n\n🎯 *Отметьте правильные ответы:*`;
+
+    return ctx.reply(updateMessage + correctAnswerMessage, {
       parse_mode: 'Markdown',
-      ...keyboard,
+      ...correctAnswersKeyboard(
+        allAnswers.map((ans, idx) => ({
+          id: `${tempQuestion.id}_${idx}`,
+          text: ans,
+        }))
+      ),
     });
   } catch (error) {
     console.error('Error in handleAnswerInput:', error);
@@ -226,8 +251,6 @@ export async function handleNextQuestion(ctx: Context) {
 
     await updateSessionState(telegramId, 'creating_test', {
       questionCount: nextQuestionNumber,
-      tempQuestion: undefined,
-      tempAnswers: undefined,
     });
 
     const nextQuestionMessage = `📌 Введите вопрос №${nextQuestionNumber + 1}:`;
@@ -266,7 +289,7 @@ export async function handleSaveTest(ctx: Context) {
 
     const successMessage = `✅ *Тест успешно сохранён!*
 
-Твой тест готов к публикации. Ты можешь поделиться ссылкой с друзьями и узнать, насколько они тебя знают! 🎉
+Твой тест ��отов к публикации. Ты можешь поделиться ссылкой с друзьями и узнать, насколько они тебя знают! 🎉
 
 Создать ещё один тест? 👇`;
 
@@ -313,16 +336,130 @@ export async function handleMyTests(ctx: Context) {
       });
     }
 
-    const testList = tests
-      .map((test: any, idx: number) => `${idx + 1}. ${test.title} (${test.question_count} вопросов)`)
-      .join('\n');
+    for (const test of tests) {
+      const testInfo = `📝 *${test.title}*\n🔢 Вопросов: ${test.question_count}`;
+      await ctx.reply(testInfo, {
+        parse_mode: 'Markdown',
+        ...testActionKeyboard(test.id),
+      });
+    }
 
-    return ctx.reply(`📚 *Ваши тесты:*\n\n${testList}`, {
-      parse_mode: 'Markdown',
+    return ctx.reply('Выберите действие для теста:', {
       ...mainMenuKeyboard,
     });
   } catch (error) {
     console.error('Error in handleMyTests:', error);
     return ctx.reply('Произошла ошибка при загрузке тестов.');
+  }
+}
+
+export async function handleShareTest(ctx: any) {
+  try {
+    const matches = ctx.match || [];
+    const testId = parseInt(matches[1] || '0');
+    if (!testId) return ctx.reply('Ошибка: тест не найден');
+
+    const shareLink = `t.me/friendlyquizbot?start=test_${testId}`;
+    const message = `🔗 *Ссылка на тест:*\n\n\`${shareLink}\`\n\nОтправьте эту ссылку друзьям, и они смогут пройти ваш тест!`;
+
+    return ctx.reply(message, {
+      parse_mode: 'Markdown',
+      ...mainMenuKeyboard,
+    });
+  } catch (error) {
+    console.error('Error in handleShareTest:', error);
+    return ctx.reply('Произошла ошибка при генерации ссылки.');
+  }
+}
+
+export async function handleDeleteTest(ctx: any) {
+  try {
+    const matches = ctx.match || [];
+    const testId = parseInt(matches[1] || '0');
+    if (!testId) return ctx.reply('Ошибка: тест не найден');
+
+    await deleteTest(testId);
+
+    return ctx.reply('🗑️ Тест удален.', {
+      ...mainMenuKeyboard,
+    });
+  } catch (error) {
+    console.error('Error in handleDeleteTest:', error);
+    return ctx.reply('Произошла ошибка при удалении теста.');
+  }
+}
+
+export async function handleToggleCorrectAnswer(ctx: any) {
+  try {
+    const telegramId = ctx.from?.id;
+    if (!telegramId) return;
+
+    const matches = ctx.match || [];
+    const answerId = matches[1];
+    const session = await getSession(telegramId);
+
+    if (!session) return ctx.reply('Сессия не найдена');
+
+    // Track selected correct answers
+    let correctAnswers = session.temp_answers ? JSON.parse(session.temp_answers) : [];
+
+    if (correctAnswers.includes(answerId)) {
+      correctAnswers = correctAnswers.filter((id: string) => id !== answerId);
+    } else {
+      correctAnswers.push(answerId);
+    }
+
+    await updateSessionState(telegramId, 'collecting_answers', {
+      tempAnswers: JSON.stringify(correctAnswers),
+    });
+
+    const isSelected = correctAnswers.includes(answerId);
+    const mark = isSelected ? '✅' : '☐';
+
+    return ctx.answerCbQuery(`${mark} ${isSelected ? 'Отмечено' : 'Отметка отменена'}`);
+  } catch (error) {
+    console.error('Error in handleToggleCorrectAnswer:', error);
+  }
+}
+
+export async function handleConfirmCorrectAnswers(ctx: Context) {
+  try {
+    const telegramId = ctx.from?.id;
+    if (!telegramId) return;
+
+    const session = await getSession(telegramId);
+    if (!session) return;
+
+    const correctAnswerIds = JSON.parse(session.temp_answers || '[]');
+    const tempQuestion = JSON.parse(session.temp_question || '{}');
+
+    // Mark answers as correct in database
+    for (const answerId of correctAnswerIds) {
+      const [questionId, answerIdx] = answerId.split('_');
+      if (parseInt(questionId) === tempQuestion.id) {
+        // Get all answers for this question and mark the correct ones
+        const questionData = await getQuestionWithAnswers(tempQuestion.id);
+        const answer = questionData.answers[parseInt(answerIdx)];
+        if (answer) {
+          await markAnswerAsCorrect(answer.id);
+        }
+      }
+    }
+
+    const questionCount = session.current_question_count || 0;
+
+    if (questionCount >= 5) {
+      // Show save button
+      return ctx.reply('✅ Правильные ответы отмечены!', {
+        ...saveTestKeyboard,
+      });
+    } else {
+      // Show next question button
+      return ctx.reply('✅ Правильные ответы отмечены!', {
+        ...nextQuestionKeyboard,
+      });
+    }
+  } catch (error) {
+    console.error('Error in handleConfirmCorrectAnswers:', error);
   }
 }

@@ -10,6 +10,10 @@ import {
   handleSaveTest,
   handleStopCreation,
   handleMyTests,
+  handleShareTest,
+  handleDeleteTest,
+  handleToggleCorrectAnswer,
+  handleConfirmCorrectAnswers,
 } from './bot/handlers.js';
 import { getSession } from './db/queries.js';
 
@@ -39,6 +43,10 @@ bot.action('my_tests', handleMyTests);
 bot.action('next_question', handleNextQuestion);
 bot.action('save_test', handleSaveTest);
 bot.action('stop_test_creation', handleStopCreation);
+bot.action(/^share_test_(\d+)$/, handleShareTest);
+bot.action(/^delete_test_(\d+)$/, handleDeleteTest);
+bot.action(/^toggle_answer_(.+)$/, handleToggleCorrectAnswer);
+bot.action('confirm_correct_answers', handleConfirmCorrectAnswers);
 
 // Message handlers
 bot.on('message', async (ctx) => {
