@@ -1,12 +1,19 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
-  "installCommand": "npm install",
+  "builds": [
+    {
+      "src": "api/webhook.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/webhook",
+      "dest": "api/webhook.js"
+    }
+  ],
   "env": {
-    "NODE_ENV": "production",
-    "TELEGRAM_BOT_TOKEN": "@TELEGRAM_BOT_TOKEN",
-    "TELEGRAM_BOT_USERNAME": "@TELEGRAM_BOT_USERNAME",
-    "DATABASE_URL": "@DATABASE_URL",
-    "WEBHOOK_URL": "@WEBHOOK_URL"
+    "TELEGRAM_TOKEN": "@TELEGRAM_TOKEN",
+    "NEON_CONNECTION_STRING": "@NEON_CONNECTION_STRING"
   }
 }

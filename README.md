@@ -1,174 +1,168 @@
-# Friendship Quiz Bot 🎉
+# Проверка дружбы - Telegram Bot 🎯
 
-A Telegram bot that lets users create quizzes about themselves and share them with friends to see how well they know each other.
+A Telegram bot that allows users to create friendship tests, add questions and answers, and share them with friends.
 
-## Features
+## Features ✨
 
-- ✨ **Create Custom Quizzes**: Users can easily create tests with their own questions and answer options
-- 📚 **Manage Tests**: View all created quizzes in one place
-- 🎯 **Question Builder**: Add questions one by one with multiple answer options
-- 💾 **Save & Share**: Save completed quizzes and share them with friends via unique links
-- 🏆 **Track Friendship**: See how well friends know you based on their quiz results
+- **Create Tests**: Users can create custom tests with multiple questions
+- **Multiple Answers**: Add multiple answer options to each question (minimum 2)
+- **Test Management**: View, edit, and delete created tests
+- **Share Tests**: Generate shareable links to send tests to friends
+- **Session Management**: Track user sessions and test creation progress
+- **Neon Database**: Persistent storage with PostgreSQL
 
-## Technology Stack
-
-- **Bot Framework**: Node.js with Telegram Bot API
-- **Language**: TypeScript
-- **Database**: PostgreSQL (Neon)
-- **Hosting**: Vercel (Serverless)
-
-## Local Development
+## Setup
 
 ### Prerequisites
-
 - Node.js 18+
-- npm or yarn
-- Neon PostgreSQL account
+- Telegram Bot Token: `8357920603:AAEcRZlAzCebZxQCIRLPQWRASZL-3upZOC8`
+- Neon Database Connection String: `postgresql://neondb_owner:npg_5Q1JLwpTliPo@ep-sweet-firefly-agmtcj1n-pooler.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require`
 
-### Setup
+### Local Development
 
-1. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+1. Install dependencies:
+```bash
+npm install
+```
 
-2. **Set environment variables:**
-   The bot uses polling in development mode and automatically uses the provided credentials. Ensure these are set:
-   - `TELEGRAM_BOT_TOKEN`: Your bot token (already configured)
-   - `DATABASE_URL`: Your Neon database URL (already configured)
-   - `TELEGRAM_BOT_USERNAME`: Your bot username (already configured)
+2. Run the bot locally:
+```bash
+npm run dev
+```
 
-3. **Start development server:**
-   ```bash
-   npm run dev
-   ```
+The bot will start with polling mode on port 3001.
 
-The bot will:
-- Connect to Telegram using polling (for local testing)
-- Initialize the database automatically
-- Listen for messages from users
+### Deployment to Vercel
 
-## Deployment to Vercel
+1. Install Vercel CLI:
+```bash
+npm install -g vercel
+```
 
-### Setup
+2. Deploy:
+```bash
+vercel
+```
 
-1. **Build the project:**
-   ```bash
-   npm run build
-   ```
+3. The bot will be available at: `https://your-vercel-domain.com/api/webhook`
 
-2. **Deploy to Vercel:**
-   - Connect your GitHub repository to Vercel
-   - Add environment variables in Vercel project settings:
-     - `TELEGRAM_BOT_TOKEN`
-     - `TELEGRAM_BOT_USERNAME`
-     - `DATABASE_URL`
-     - `WEBHOOK_URL`: Your Vercel deployment URL (e.g., `https://your-project.vercel.app`)
-     - `NODE_ENV`: Set to `production`
-
-3. **Configure Telegram Webhook:**
-   After deploying, the bot will automatically set its webhook to receive updates from Telegram
-
-## API Routes
-
-- `POST /webhook` - Receives updates from Telegram (production only)
-- `GET /health` - Health check endpoint
-
-## Database Schema
-
-### Tables
-
-- **users** - Stores user information
-- **quizzes** - Stores quiz metadata
-- **questions** - Stores individual questions
-- **options** - Stores answer options for each question
-- **quiz_responses** - Stores responses when friends take quizzes
-
-## Bot Commands & Usage
-
-### /start
-Displays welcome message with options to create a new quiz or view existing ones
-
-### Create Test Flow
-1. User clicks "✨ Создать тест ✨"
-2. Enter questions one by one
-3. Add answer options (minimum 2 required)
-4. Can add up to 5+ questions
-5. Save quiz when ready (5+ questions required)
-6. Get shareable link for friends
-
-### View Tests
-Click "📚 Мои тесты" to see all created quizzes with share links
-
-## Development Notes
-
-- **Polling Mode**: Used in development for easier local testing
-- **Webhook Mode**: Used in production on Vercel for real-time updates
-- **Database**: Lazy initialization to prevent blocking startup
-- **Error Handling**: Graceful error handling with timeouts to prevent hanging
+4. Update Telegram webhook:
+```
+POST /bot<TOKEN>/setWebhook?url=https://your-vercel-domain.com/api/webhook
+```
 
 ## Project Structure
 
 ```
-src/
-├── bot/
-│   ├── handlers.ts      # Command and message handlers
-│   └── factory.ts       # Bot initialization and handler setup
-├── database/
-│   ├── connection.ts    # Database connection pool
-│   ├── migrations.ts    # Database schema initialization
-│   └── quizService.ts   # Database operations
-├── types/
-│   ├── index.ts         # TypeScript type definitions
-│   └── pg.d.ts          # PostgreSQL types
-├── utils/
-│   ├── sessionManager.ts # User session management
-│   └── formatters.ts    # Message formatting
-└── index.ts             # Main application entry point
-
-api/
-├── webhook.ts           # Vercel webhook handler
-└── health.ts            # Health check handler
+├── index.js                 # Local development server
+├── bot.js                   # Bot logic and handlers
+├── db.js                    # Database connection
+├── database-service.js      # Database operations
+├── api/webhook.js          # Vercel webhook handler
+├── vercel.json             # Vercel configuration
+└── package.json            # Dependencies
 ```
 
-## Configuration
+## Database Schema
 
-### Environment Variables
+### users
+- `id` - Telegram user ID (Primary Key)
+- `username` - Telegram username
+- `first_name` - User's first name
+- `created_at` - Account creation timestamp
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| TELEGRAM_BOT_TOKEN | Bot token from BotFather | ✓ |
-| TELEGRAM_BOT_USERNAME | Bot username (without @) | ✓ |
-| DATABASE_URL | Neon PostgreSQL connection string | ✓ |
-| WEBHOOK_URL | Production webhook URL (Vercel) | ✓ (prod only) |
-| NODE_ENV | Environment (development/production) | ✗ |
-| PORT | Server port (default: 3000) | ✗ |
+### tests
+- `id` - Test ID (Primary Key)
+- `user_id` - Owner's user ID (Foreign Key)
+- `title` - Test title
+- `created_at` - Test creation timestamp
 
-## Troubleshooting
+### questions
+- `id` - Question ID (Primary Key)
+- `test_id` - Associated test ID (Foreign Key)
+- `question_text` - Question content
+- `question_order` - Order in the test
+- `created_at` - Creation timestamp
 
-### Bot not responding
-- Check if polling is working in development mode
-- Verify bot token is correct
-- Check database connection
+### answers
+- `id` - Answer ID (Primary Key)
+- `question_id` - Associated question ID (Foreign Key)
+- `answer_text` - Answer content
+- `answer_order` - Order in the question
+- `created_at` - Creation timestamp
 
-### Database connection timeout
-- Verify DATABASE_URL is correct
-- Check network connectivity to Neon
-- Ensure database tables exist
+### user_sessions
+- `id` - Session ID (Primary Key)
+- `user_id` - Associated user ID (Foreign Key)
+- `session_data` - JSON session data (current state, questions, etc.)
+- `created_at` - Session creation timestamp
+- `updated_at` - Last update timestamp
 
-### Message not being deleted
-- This is normal in some Telegram clients
-- The bot will still function correctly
+## Bot Commands
 
-## Future Enhancements
+### /start
+Displays welcome message with options to create a test or view existing tests
 
-- Friend quiz tracking and scoring
-- Achievement system for high scores
-- Quiz statistics and analytics
-- Friend comparison features
-- Public quiz gallery
-- User profiles with quiz history
+## Bot Workflow
 
-## License
+1. **Welcome Screen**: User sees welcome message with two buttons
+   - "✨ Создать тест ✨" - Create new test
+   - "📋 Мои тесты" - View my tests
 
-ISC
+2. **Test Creation**:
+   - User clicks "Create test"
+   - Bot prompts for first question
+   - User enters question text
+   - Bot prompts for answer options
+   - User adds answers (minimum 2)
+   - After each answer addition, the message updates to show all answers
+   - Once 2+ answers added, "Next question" button appears
+   - Process repeats for more questions
+   - After 5+ questions, "Save test" button appears
+
+3. **Test Management**:
+   - View all created tests
+   - See question count and creation date
+   - Delete tests with confirmation
+   - Share tests with unique links
+
+## Technologies
+
+- **Telegraf**: Telegram bot framework
+- **Express**: Web server (local development)
+- **PostgreSQL/Neon**: Database
+- **Node.js**: Runtime environment
+
+## Dependencies
+
+```json
+{
+  "express": "^4.18.2",
+  "telegraf": "^4.14.1",
+  "pg": "^8.11.3",
+  "dotenv": "^16.3.1"
+}
+```
+
+## Environment Variables
+
+Required for Vercel deployment:
+- `TELEGRAM_TOKEN` - Your Telegram bot token
+- `NEON_CONNECTION_STRING` - Your Neon database connection string
+
+These are already configured in the deployment.
+
+## Error Handling
+
+The bot includes comprehensive error handling:
+- Database connection errors
+- User session management errors
+- Telegram API errors
+- Graceful fallback messages
+
+## Notes
+
+- User messages are deleted after being processed to reduce clutter
+- Previous bot messages are edited instead of sending new ones
+- Session data is stored in JSONB for flexibility
+- Proper database constraints ensure data integrity

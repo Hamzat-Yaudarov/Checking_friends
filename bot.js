@@ -1,172 +1,19 @@
 import { Telegraf } from 'telegraf';
-import pkg from 'pg';
-const { Pool } = pkg;
+import {
+  ensureUserExists,
+  getOrCreateSession,
+  updateSessionData,
+  createTest,
+  addQuestion,
+  addAnswer,
+  getQuestionById,
+  getAnswersByQuestionId,
+  getUserTests,
+  getTestWithQuestions
+} from './database-service.js';
 
 const TOKEN = '8357920603:AAEcRZlAzCebZxQCIRLPQWRASZL-3upZOC8';
-const NEON_CONNECTION = 'postgresql://neondb_owner:npg_5Q1JLwpTliPo@ep-sweet-firefly-agmtcj1n-pooler.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
-
-const pool = new Pool({
-  connectionString: NEON_CONNECTION,
-  max: 1,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000,
-});
-
 const bot = new Telegraf(TOKEN);
-
-async function ensureUserExists(userId, username, firstName) {
-  try {
-    await pool.query(
-      `INSERT INTO users (id, username, first_name) 
-       VALUES ($1, $2, $3)
-       ON CONFLICT (id) DO NOTHING`,
-      [userId, username, firstName]
-    );
-  } catch (error) {
-    console.error('Error ensuring user exists:', error);
-  }
-}
-
-async function getOrCreateSession(userId) {
-  try {
-    const result = await pool.query(
-      `SELECT id, session_data FROM user_sessions 
-       WHERE user_id = $1`,
-      [userId]
-    );
-    
-    if (result.rows.length > 0) {
-      return result.rows[0];
-    }
-    
-    const newSession = await pool.query(
-      `INSERT INTO user_sessions (user_id, session_data) 
-       VALUES ($1, $2) 
-       RETURNING id, session_data`,
-      [userId, JSON.stringify({ state: 'idle', questions: [], currentQuestion: 0 })]
-    );
-    
-    return newSession.rows[0];
-  } catch (error) {
-    console.error('Error getting or creating session:', error);
-  }
-}
-
-async function updateSessionData(userId, sessionData) {
-  try {
-    await pool.query(
-      `UPDATE user_sessions 
-       SET session_data = $1, updated_at = CURRENT_TIMESTAMP 
-       WHERE user_id = $2`,
-      [JSON.stringify(sessionData), userId]
-    );
-  } catch (error) {
-    console.error('Error updating session data:', error);
-  }
-}
-
-async function createTest(userId) {
-  try {
-    const result = await pool.query(
-      `INSERT INTO tests (user_id, title) 
-       VALUES ($1, $2) 
-       RETURNING id`,
-      [userId, `Test ${new Date().toISOString().split('T')[0]}`]
-    );
-    return result.rows[0].id;
-  } catch (error) {
-    console.error('Error creating test:', error);
-  }
-}
-
-async function addQuestion(testId, questionText, questionOrder) {
-  try {
-    const result = await pool.query(
-      `INSERT INTO questions (test_id, question_text, question_order) 
-       VALUES ($1, $2, $3) 
-       RETURNING id`,
-      [testId, questionText, questionOrder]
-    );
-    return result.rows[0].id;
-  } catch (error) {
-    console.error('Error adding question:', error);
-  }
-}
-
-async function addAnswer(questionId, answerText, answerOrder) {
-  try {
-    const result = await pool.query(
-      `INSERT INTO answers (question_id, answer_text, answer_order) 
-       VALUES ($1, $2, $3) 
-       RETURNING id`,
-      [questionId, answerText, answerOrder]
-    );
-    return result.rows[0].id;
-  } catch (error) {
-    console.error('Error adding answer:', error);
-  }
-}
-
-async function getAnswersByQuestionId(questionId) {
-  try {
-    const result = await pool.query(
-      `SELECT * FROM answers WHERE question_id = $1 
-       ORDER BY answer_order ASC`,
-      [questionId]
-    );
-    return result.rows;
-  } catch (error) {
-    console.error('Error getting answers:', error);
-  }
-}
-
-async function getUserTests(userId) {
-  try {
-    const result = await pool.query(
-      `SELECT t.id, t.title, t.created_at,
-              COUNT(q.id) as question_count
-       FROM tests t
-       LEFT JOIN questions q ON t.id = q.test_id
-       WHERE t.user_id = $1
-       GROUP BY t.id
-       ORDER BY t.created_at DESC`,
-      [userId]
-    );
-    return result.rows;
-  } catch (error) {
-    console.error('Error getting user tests:', error);
-  }
-}
-
-async function getTestWithQuestions(testId) {
-  try {
-    const testResult = await pool.query(
-      `SELECT * FROM tests WHERE id = $1`,
-      [testId]
-    );
-    
-    if (testResult.rows.length === 0) return null;
-    
-    const test = testResult.rows[0];
-    
-    const questionsResult = await pool.query(
-      `SELECT * FROM questions WHERE test_id = $1 
-       ORDER BY question_order ASC`,
-      [testId]
-    );
-    
-    const questionsWithAnswers = await Promise.all(
-      questionsResult.rows.map(async (q) => {
-        const answers = await getAnswersByQuestionId(q.id);
-        return { ...q, answers };
-      })
-    );
-    
-    return { ...test, questions: questionsWithAnswers };
-  } catch (error) {
-    console.error('Error getting test with questions:', error);
-  }
-}
 
 const WELCOME_KEYBOARD = {
   reply_markup: {
@@ -256,7 +103,7 @@ bot.action('my_tests', async (ctx) => {
     await ctx.answerCbQuery();
     
     if (tests.length === 0) {
-      return ctx.reply('У тебя пока нет тестов. Создай свой первый тест! 🎯');
+      return ctx.reply('У тебя пока нет тест��в. Создай свой первый тест! 🎯');
     }
     
     let message = '📋 Твои тесты:\n\n';
@@ -456,7 +303,7 @@ bot.action('next_question', async (ctx) => {
     if (session.questions.length >= 5) {
       keyboard.push([{ text: '✅ Сохранить тест', callback_data: 'save_test' }]);
     }
-    keyboard.push([{ text: '��� Остановить', callback_data: 'stop_creation' }]);
+    keyboard.push([{ text: '🛑 Остановить', callback_data: 'stop_creation' }]);
     
     const messageText = `✅ Вопрос ${session.questions.length} сохранён!\n\n` +
       `Введи вопрос #${questionNum}:`;
@@ -569,7 +416,7 @@ bot.action(/^share_test_(\d+)$/, async (ctx) => {
     const shareLink = `https://t.me/friendlyquizbot?start=test_${testId}`;
     
     const message = `🔗 Ссылка на тест:\n${shareLink}\n\n` +
-      `Отправь эту ссылку своим дру��ьям! 👇`;
+      `Отправь эту ссылку своим друзьям! 👇`;
     
     await ctx.answerCbQuery();
     try {
@@ -657,76 +504,4 @@ bot.action(/^confirm_delete_(\d+)$/, async (ctx) => {
   }
 });
 
-async function initializeDatabase() {
-  try {
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        id BIGINT PRIMARY KEY,
-        username VARCHAR(255),
-        first_name VARCHAR(255),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS tests (
-        id SERIAL PRIMARY KEY,
-        user_id BIGINT NOT NULL,
-        title VARCHAR(255),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users(id)
-      )
-    `);
-
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS questions (
-        id SERIAL PRIMARY KEY,
-        test_id INT NOT NULL,
-        question_text TEXT NOT NULL,
-        question_order INT NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (test_id) REFERENCES tests(id) ON DELETE CASCADE
-      )
-    `);
-
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS answers (
-        id SERIAL PRIMARY KEY,
-        question_id INT NOT NULL,
-        answer_text TEXT NOT NULL,
-        answer_order INT NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
-      )
-    `);
-
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS user_sessions (
-        id SERIAL PRIMARY KEY,
-        user_id BIGINT NOT NULL,
-        session_data JSONB,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users(id)
-      )
-    `);
-
-    console.log('Database initialized');
-  } catch (error) {
-    console.error('Database initialization error:', error);
-  }
-}
-
-export default async function handler(req, res) {
-  try {
-    if (req.method === 'POST') {
-      await bot.handleUpdate(req.body, res);
-    } else if (req.method === 'GET') {
-      await initializeDatabase();
-      res.json({ status: 'Telegram bot is running', bot: '@friendlyquizbot' });
-    }
-  } catch (error) {
-    console.error('Webhook handler error:', error);
-    res.status(200).json({ ok: true });
-  }
-}
+export default bot;

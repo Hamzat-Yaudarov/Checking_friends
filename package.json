@@ -1,20 +1,20 @@
 {
   "name": "friendship-quiz-bot",
   "version": "1.0.0",
-  "description": "Telegram bot for creating friendship quizzes",
-  "main": "dist/index.js",
+  "description": "Telegram bot for creating and sharing friendship tests",
+  "main": "index.js",
+  "type": "module",
   "scripts": {
     "dev": "node index.js",
-    "build": "echo 'No build required'",
     "start": "node index.js"
   },
   "dependencies": {
     "express": "^4.18.2",
-    "node-telegram-bot-api": "^0.63.0",
+    "telegraf": "^4.14.1",
     "pg": "^8.11.3",
     "dotenv": "^16.3.1"
   },
-  "devDependencies": {
-    "@vercel/node": "^3.0.0"
+  "engines": {
+    "node": "18"
   }
 }
